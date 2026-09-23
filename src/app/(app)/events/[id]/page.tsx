@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import {
-  getEvent, getPartners, getChannels, getProfiles, getEventParticipants, getEventGoals,
+  getEvent, getPartners, getChannels, getProfiles, getEventTypes, getEventParticipants, getEventGoals,
   getDailyReports, getGalleryImages, getEventContacts, getEventPartnerships,
   getEventMaterials, getSocialFollows, getEventComments, getEventSurveys,
   getTestimonies, getConversations, getActivityLog, getPlatforms, safe,
@@ -20,11 +20,12 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   const sb = await createClient();
 
-  const [partners, channels, platforms, profiles, participants, goals, dailyReports, gallery, contacts, partnerships, materials, follows, comments, surveys, testimonies, conversations, activity] = await Promise.all([
+  const [partners, channels, platforms, profiles, eventTypes, participants, goals, dailyReports, gallery, contacts, partnerships, materials, follows, comments, surveys, testimonies, conversations, activity] = await Promise.all([
     getPartners(),
     getChannels(),
     getPlatforms(),
     getProfiles(),
+    getEventTypes(),
     getEventParticipants(id),
     getEventGoals(id),
     getDailyReports(id),
@@ -46,9 +47,11 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     <EventDetailClient
       event={event}
       partner={partner}
+      partners={partners}
       channels={channels}
       platforms={platforms}
       profiles={profiles}
+      eventTypes={eventTypes}
       participants={participants}
       goals={goals}
       dailyReports={dailyReports}

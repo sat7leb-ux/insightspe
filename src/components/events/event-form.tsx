@@ -1,12 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type { EventRow, Partner, Channel, Profile, EventTypeRow } from "@/lib/types";
-import { EVENT_STATUSES, EVENT_STAGES, EVENT_TYPES, PLATFORM_NAMES } from "@/lib/types";
+import { EVENT_STATUSES, EVENT_STAGES, EVENT_TYPES } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
 import { Loader2 } from "lucide-react";
+
+// Module-scope so React keeps the same component identity across re-renders.
+// (Defining this inside EventForm remounts all inputs on every keystroke,
+// which made text fields lose focus after one character.)
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 border-b pb-1.5">{title}</p>
+      <div className="grid gap-3 sm:grid-cols-2">{children}</div>
+    </div>
+  );
+}
 
 interface FormState {
   name: string;
@@ -129,13 +141,6 @@ export function EventForm({
       setSaving(false);
     }
   };
-
-  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <p className="text-[11px] font-bold uppercase tracking-wider text-slate-400 mb-3 border-b pb-1.5">{title}</p>
-      <div className="grid gap-3 sm:grid-cols-2">{children}</div>
-    </div>
-  );
 
   return (
     <form onSubmit={submit} className="space-y-5" noValidate>
@@ -279,12 +284,6 @@ export function EventForm({
         </div>
         <div className="sm:col-span-2">
           <p className="label">Platforms Reached</p>
-          <div className="flex flex-wrap gap-2">
-            {PLATFORM_NAMES.map((p) => {
-              // platform ids resolved from names via channels prop not available here; use names stored on event? platforms are uuid[] — we map by select of platforms
-              return null;
-            })}
-          </div>
           <PlatformPicker form={form} set={set} />
         </div>
       </Section>
@@ -326,16 +325,15 @@ export function EventForm({
 }
 
 function PlatformPicker({ form, set }: { form: FormState; set: <K extends keyof FormState>(k: K, v: FormState[K]) => void }) {
-  // platforms list is fetched from DB at page level; here we use a lightweight client fetch
   const [platforms, setPlatforms] = useState<{ id: string; name: string; color: string }[]>([]);
-  const [loaded, setLoaded] = useState(false);
 
-  if (!loaded) {
-    setLoaded(true);
+  useEffect(() => {
+    let cancelled = false;
     createClient()
       .from("platforms").select("id, name, color").eq("is_active", true).order("sort_order")
-      .then(({ data }) => setPlatforms(data ?? []));
-  }
+      .then(({ data }) => { if (!cancelled) setPlatforms(data ?? []); });
+    return () => { cancelled = true; };
+  }, []);
 
   return (
     <div className="flex flex-wrap gap-2">

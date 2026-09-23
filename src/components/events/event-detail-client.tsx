@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import type {
   EventRow, Partner, Channel, Profile, EventParticipant, EventGoal, DailyReport,
   GalleryImage, EventContact, EventPartnership, EventMaterial, SocialFollow,
-  EventComment, EventSurvey, Testimony, Conversation, ActivityLogEntry,
+  EventComment, EventSurvey, Testimony, Conversation, ActivityLogEntry, EventTypeRow,
 } from "@/lib/types";
 import { GOAL_STATUSES, PARTNERSHIP_STATUSES, FOLLOW_UP_STATUSES, PARTICIPATION_STATUSES, canWriteEvents, canViewFinancials, type UserRole } from "@/lib/types";
 import { StatusBadge, Tag, EmptyState, ProgressBar, Avatar } from "@/components/ui/primitives";
@@ -43,15 +43,17 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 export function EventDetailClient({
-  event, partner, channels, platforms, profiles, participants, goals, dailyReports,
+  event, partner, partners, channels, platforms, profiles, eventTypes, participants, goals, dailyReports,
   gallery, contacts, partnerships, materials, follows, comments, surveys, testimonies,
   conversations, activity, role, currentUserId, canFinancial,
 }: {
   event: EventRow;
   partner: Partner | null;
+  partners: Partner[];
   channels: Channel[];
   platforms: { id: string; name: string; color: string }[];
   profiles: Profile[];
+  eventTypes: EventTypeRow[];
   participants: EventParticipant[];
   goals: EventGoal[];
   dailyReports: DailyReport[];
@@ -204,10 +206,10 @@ export function EventDetailClient({
       <Modal open={editOpen} onClose={() => setEditOpen(false)} title="Edit Event" wide>
         <EventForm
           event={event}
-          partners={[]}
+          partners={partners}
           channels={channels}
           profiles={profiles}
-          eventTypes={[]}
+          eventTypes={eventTypes}
           onDone={() => { setEditOpen(false); router.refresh(); }}
           onCancel={() => setEditOpen(false)}
         />
