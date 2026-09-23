@@ -6,7 +6,7 @@ import type { SessionUser } from "@/lib/types";
 
 export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
     const {
       data: { user },
       error,

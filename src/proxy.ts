@@ -3,7 +3,7 @@ import { createServerClient } from "@supabase/ssr";
 
 const PUBLIC_PATHS = ["/login", "/signup", "/forgot-password", "/reset-password"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

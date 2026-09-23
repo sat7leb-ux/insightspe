@@ -23,7 +23,7 @@ export default function SignUpPage() {
     }
     setLoading(true);
     try {
-      const sb = createClient();
+      const sb = await createClient();
       const { error } = await sb.auth.signUp({
         email,
         password,

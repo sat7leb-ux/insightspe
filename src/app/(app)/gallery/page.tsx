@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic";
 
 export default async function GalleryPage() {
   await requireUser();
-  const sb = createClient();
+  const sb = await createClient();
   const images = await safe(async () => {
     const { data } = await sb
       .from("event_gallery")

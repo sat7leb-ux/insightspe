@@ -22,49 +22,49 @@ const sb = () => createClient();
 // ---------------- reference data ----------------
 export async function getChannels(): Promise<Channel[]> {
   return safe(async () => {
-    const { data } = await sb().from("channels").select("*").eq("is_active", true).order("sort_order");
+    const { data } = await (await sb()).from("channels").select("*").eq("is_active", true).order("sort_order");
     return (data ?? []) as Channel[];
   }, []);
 }
 export async function getCountries(): Promise<Country[]> {
   return safe(async () => {
-    const { data } = await sb().from("countries").select("*").eq("is_active", true).order("name");
+    const { data } = await (await sb()).from("countries").select("*").eq("is_active", true).order("name");
     return (data ?? []) as Country[];
   }, []);
 }
 export async function getEventTypes(): Promise<EventTypeRow[]> {
   return safe(async () => {
-    const { data } = await sb().from("event_types").select("*").eq("is_active", true).order("sort_order");
+    const { data } = await (await sb()).from("event_types").select("*").eq("is_active", true).order("sort_order");
     return (data ?? []) as EventTypeRow[];
   }, []);
 }
 export async function getPlatforms(): Promise<Platform[]> {
   return safe(async () => {
-    const { data } = await sb().from("platforms").select("*").eq("is_active", true).order("sort_order");
+    const { data } = await (await sb()).from("platforms").select("*").eq("is_active", true).order("sort_order");
     return (data ?? []) as Platform[];
   }, []);
 }
 export async function getMaterialTypes(): Promise<MaterialType[]> {
   return safe(async () => {
-    const { data } = await sb().from("material_types").select("*").eq("is_active", true).order("sort_order");
+    const { data } = await (await sb()).from("material_types").select("*").eq("is_active", true).order("sort_order");
     return (data ?? []) as MaterialType[];
   }, []);
 }
 export async function getPartners(): Promise<Partner[]> {
   return safe(async () => {
-    const { data } = await sb().from("partners").select("*").eq("is_deleted", false).order("name");
+    const { data } = await (await sb()).from("partners").select("*").eq("is_deleted", false).order("name");
     return (data ?? []) as Partner[];
   }, []);
 }
 export async function getProfiles(): Promise<Profile[]> {
   return safe(async () => {
-    const { data } = await sb().from("profiles").select("*").order("full_name");
+    const { data } = await (await sb()).from("profiles").select("*").order("full_name");
     return (data ?? []) as Profile[];
   }, []);
 }
 export async function getSurveyQuestions(): Promise<SurveyQuestion[]> {
   return safe(async () => {
-    const { data } = await sb().from("survey_questions").select("*").eq("is_active", true).order("sort_order");
+    const { data } = await (await sb()).from("survey_questions").select("*").eq("is_active", true).order("sort_order");
     return (data ?? []) as SurveyQuestion[];
   }, []);
 }
@@ -87,7 +87,7 @@ export interface EventFilters {
 
 export async function getEvents(filters: EventFilters = {}): Promise<EventRow[]> {
   return safe(async () => {
-    let query = sb().from("events").select("*").order("start_date", { ascending: false }).limit(500);
+    let query = (await sb()).from("events").select("*").order("start_date", { ascending: false }).limit(500);
 
     if (!filters.includeArchived) query = query.neq("status", "Archived");
     if (filters.country) query = query.eq("country", filters.country);
@@ -110,7 +110,7 @@ export async function getEvents(filters: EventFilters = {}): Promise<EventRow[]>
 
 export async function getEvent(id: string): Promise<EventRow | null> {
   return safe(async () => {
-    const { data } = await sb().from("events").select("*").eq("id", id).maybeSingle();
+    const { data } = await (await sb()).from("events").select("*").eq("id", id).maybeSingle();
     return data as EventRow | null;
   }, null);
 }
@@ -118,7 +118,7 @@ export async function getEvent(id: string): Promise<EventRow | null> {
 // ---------------- event children ----------------
 export async function getEventParticipants(eventId: string): Promise<EventParticipant[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_participants")
       .select("*, profiles(id, full_name, email, role, dept)")
       .eq("event_id", eventId)
@@ -129,7 +129,7 @@ export async function getEventParticipants(eventId: string): Promise<EventPartic
 
 export async function getEventGoals(eventId: string): Promise<EventGoal[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_goals")
       .select("*, profiles(id, full_name)")
       .eq("event_id", eventId)
@@ -140,7 +140,7 @@ export async function getEventGoals(eventId: string): Promise<EventGoal[]> {
 
 export async function getAllGoals(): Promise<(EventGoal & { events?: { id: string; name: string } | null })[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_goals")
       .select("*, events(id, name), profiles(id, full_name)")
       .order("created_at", { ascending: false })
@@ -151,7 +151,7 @@ export async function getAllGoals(): Promise<(EventGoal & { events?: { id: strin
 
 export async function getDailyReports(eventId: string): Promise<DailyReport[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_daily_reports")
       .select("*, profiles(id, full_name)")
       .eq("event_id", eventId)
@@ -162,7 +162,7 @@ export async function getDailyReports(eventId: string): Promise<DailyReport[]> {
 
 export async function getAllDailyReports(): Promise<(DailyReport & { events?: { id: string; name: string } | null })[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_daily_reports")
       .select("*, events(id, name), profiles(id, full_name)")
       .order("report_date", { ascending: false })
@@ -173,7 +173,7 @@ export async function getAllDailyReports(): Promise<(DailyReport & { events?: { 
 
 export async function getGalleryImages(eventId: string): Promise<GalleryImage[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_gallery")
       .select("*, profiles(id, full_name)")
       .eq("event_id", eventId)
@@ -185,7 +185,7 @@ export async function getGalleryImages(eventId: string): Promise<GalleryImage[]>
 
 export async function getEventContacts(eventId: string): Promise<EventContact[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_contacts")
       .select("*, profiles(id, full_name)")
       .eq("event_id", eventId)
@@ -196,7 +196,7 @@ export async function getEventContacts(eventId: string): Promise<EventContact[]>
 
 export async function getEventPartnerships(eventId: string): Promise<EventPartnership[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_partnerships")
       .select("*, profiles(id, full_name)")
       .eq("event_id", eventId)
@@ -207,7 +207,7 @@ export async function getEventPartnerships(eventId: string): Promise<EventPartne
 
 export async function getAllPartnerships(): Promise<(EventPartnership & { events?: { id: string; name: string } | null })[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_partnerships")
       .select("*, events(id, name), profiles(id, full_name)")
       .order("created_at", { ascending: false })
@@ -218,14 +218,14 @@ export async function getAllPartnerships(): Promise<(EventPartnership & { events
 
 export async function getEventMaterials(eventId: string): Promise<EventMaterial[]> {
   return safe(async () => {
-    const { data } = await sb().from("event_materials").select("*").eq("event_id", eventId).order("created_at");
+    const { data } = await (await sb()).from("event_materials").select("*").eq("event_id", eventId).order("created_at");
     return (data ?? []) as EventMaterial[];
   }, []);
 }
 
 export async function getAllMaterials(): Promise<(EventMaterial & { events?: { id: string; name: string; country: string } | null })[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_materials")
       .select("*, events(id, name, country)")
       .order("created_at", { ascending: false })
@@ -236,14 +236,14 @@ export async function getAllMaterials(): Promise<(EventMaterial & { events?: { i
 
 export async function getSocialFollows(eventId: string): Promise<SocialFollow[]> {
   return safe(async () => {
-    const { data } = await sb().from("event_social_follows").select("*").eq("event_id", eventId).order("follow_date");
+    const { data } = await (await sb()).from("event_social_follows").select("*").eq("event_id", eventId).order("follow_date");
     return (data ?? []) as SocialFollow[];
   }, []);
 }
 
 export async function getEventComments(eventId: string): Promise<EventComment[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("event_comments")
       .select("*, profiles(id, full_name, avatar_url)")
       .eq("event_id", eventId)
@@ -255,14 +255,14 @@ export async function getEventComments(eventId: string): Promise<EventComment[]>
 
 export async function getEventSurveys(eventId: string): Promise<EventSurvey[]> {
   return safe(async () => {
-    const { data } = await sb().from("event_surveys").select("*").eq("event_id", eventId).order("submitted_at");
+    const { data } = await (await sb()).from("event_surveys").select("*").eq("event_id", eventId).order("submitted_at");
     return (data ?? []) as EventSurvey[];
   }, []);
 }
 
 export async function getTestimonies(eventId?: string): Promise<(Testimony & { events?: { id: string; name: string } | null })[]> {
   return safe(async () => {
-    let query = sb()
+    let query = (await sb())
       .from("testimonies")
       .select("*, events(id, name)")
       .order("created_at", { ascending: false })
@@ -275,7 +275,7 @@ export async function getTestimonies(eventId?: string): Promise<(Testimony & { e
 
 export async function getConversations(eventId?: string): Promise<(Conversation & { events?: { id: string; name: string } | null })[]> {
   return safe(async () => {
-    let query = sb()
+    let query = (await sb())
       .from("conversations")
       .select("*, events(id, name)")
       .order("created_at", { ascending: false })
@@ -288,7 +288,7 @@ export async function getConversations(eventId?: string): Promise<(Conversation 
 
 export async function getActivityLog(entityId?: string, limit = 50): Promise<ActivityLogEntry[]> {
   return safe(async () => {
-    let query = sb()
+    let query = (await sb())
       .from("event_activity_log")
       .select("*")
       .order("created_at", { ascending: false })
@@ -301,7 +301,7 @@ export async function getActivityLog(entityId?: string, limit = 50): Promise<Act
 
 export async function getMyEvents(userId: string): Promise<EventRow[]> {
   return safe(async () => {
-    const { data } = await sb()
+    const { data } = await (await sb())
       .from("events")
       .select(`
         *,

@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const sb = createClient();
+  const sb = await createClient();
 
   const [events, goals, dailyReports, channels, partnerships, materials, contactsCount] = await Promise.all([
     getEvents({}),

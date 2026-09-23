@@ -18,7 +18,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
   const event = await getEvent(id);
   if (!event) notFound();
 
-  const sb = createClient();
+  const sb = await createClient();
 
   const [partners, channels, platforms, profiles, participants, goals, dailyReports, gallery, contacts, partnerships, materials, follows, comments, surveys, testimonies, conversations, activity] = await Promise.all([
     getPartners(),

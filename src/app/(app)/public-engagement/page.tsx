@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PublicEngagementPage() {
   const user = await requireUser();
-  const sb = createClient();
+  const sb = await createClient();
 
   const [events, goals, dailyReports, materials, partnerships, channels, contactsCount, followsCount] = await Promise.all([
     getEvents({}),

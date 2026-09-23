@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
-export default function LoginPage() {
+function LoginPageInner() {
   const router = useRouter();
   const params = useSearchParams();
   const [email, setEmail] = useState("");
@@ -21,7 +21,7 @@ export default function LoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const sb = createClient();
+      const sb = await createClient();
       const { error } = await sb.auth.signInWithPassword({
         email,
         password,
@@ -115,5 +115,13 @@ export default function LoginPage() {
         <Link href="/signup" className="font-semibold text-blue-700 hover:underline">Sign Up</Link>
       </p>
     </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="skeleton h-64 w-full" />}>
+      <LoginPageInner />
+    </Suspense>
   );
 }

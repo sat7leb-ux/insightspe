@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
   const user = await requireUser();
-  const sb = createClient();
+  const sb = await createClient();
   const [events, dailyReports, materials, partnerships, surveys] = await Promise.all([
     getEvents({}),
     getAllDailyReports(),

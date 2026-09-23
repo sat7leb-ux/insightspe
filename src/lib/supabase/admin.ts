@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * Falls back to the RLS cookie client when the secret is absent so that
  * deploys without the secret never white-screen.
  */
-export function createAdminClient(): SupabaseClient {
+export async function createAdminClient(): Promise<SupabaseClient> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -20,9 +20,9 @@ export function createAdminClient(): SupabaseClient {
     });
   }
 
-  // No service key: fall back to anon (RLS applies). Import lazily to avoid
-  // next/headers in the client bundle.
+  // No service key: fall back to the RLS cookie client so deploys without the
+  // secret never white-screen. (RLS still applies.)
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { createClient: createCookieClient } = require("./server") as typeof import("./server");
-  return createCookieClient() as SupabaseClient;
+  return (await createCookieClient()) as unknown as SupabaseClient;
 }
