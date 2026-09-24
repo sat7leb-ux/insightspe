@@ -60,7 +60,7 @@ export function SettingsClient({ user }: { user: SessionUser }) {
 
   return (
     <div className="space-y-5">
-      <PageHeader title="Settings" description="Your profile, account preferences and the social media registry." />
+      <PageHeader title="Settings" description="Your profile and account preferences." />
 
       <div className="card p-5">
         <div className="flex items-center gap-4 mb-5">
