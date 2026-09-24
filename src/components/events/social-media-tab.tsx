@@ -9,9 +9,10 @@ import { EmptyState, Tag, StatusBadge } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/modal";
 import { formatNumber, formatDate, formatDateTime } from "@/lib/utils";
+import { isYouTubeUrl, fetchYouTubeMetrics, isoToLocalInput } from "@/lib/social-sync";
 import {
   Share2, Plus, Link2, Unlink, Pencil, Trash2, ExternalLink, Eye, ThumbsUp,
-  MessageSquare, Repeat2, Loader2, Instagram, Youtube, Facebook, Globe, Music2,
+  MessageSquare, Repeat2, Loader2, Instagram, Youtube, Facebook, Globe, Music2, Sparkles,
 } from "lucide-react";
 
 const POST_TYPES = ["Post", "Video", "Reel", "Story", "Live", "Article", "Other"] as const;
@@ -43,6 +44,9 @@ export function SocialMediaTab({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [q, setQ] = useState("");
+  const [ytBusy, setYtBusy] = useState(false);
+  const [ytHint, setYtHint] = useState<string | null>(null);
+  const [ytError, setYtError] = useState<string | null>(null);
 
   // link modal state
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
@@ -187,6 +191,29 @@ export function SocialMediaTab({
     if (error) { toast(error.message, "error"); return; }
     toast("Post deleted");
     router.refresh();
+  };
+
+  // ---- YouTube auto-fill ----
+  const autofillYouTube = async () => {
+    setYtError(null);
+    setYtHint(null);
+    setYtBusy(true);
+    try {
+      const m = await fetchYouTubeMetrics(form.post_url);
+      setForm((f) => ({
+        ...f,
+        content_summary: f.content_summary || m.title,
+        posted_at: f.posted_at || isoToLocalInput(m.publishedAt),
+        views: String(m.views),
+        likes: String(m.likes),
+        comments_count: String(m.comments),
+      }));
+      setYtHint(`Fetched “${m.title}” — ${m.channelTitle}`);
+    } catch (err) {
+      setYtError(err instanceof Error ? err.message : "Could not fetch YouTube data");
+    } finally {
+      setYtBusy(false);
+    }
   };
 
   const platformIcon = (platform: string, size = 16) => {
@@ -426,7 +453,27 @@ export function SocialMediaTab({
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label className="label" htmlFor="sp-url">Post URL</label>
-              <input id="sp-url" className="input" type="url" value={form.post_url} onChange={(e) => setForm({ ...form, post_url: e.target.value })} placeholder="https://facebook.com/…/posts/…" />
+              <div className="flex gap-2">
+                <input
+                  id="sp-url" className="input" type="url"
+                  value={form.post_url}
+                  onChange={(e) => { setForm({ ...form, post_url: e.target.value }); setYtHint(null); }}
+                  placeholder="https://youtube.com/watch?v=… or facebook.com/…"
+                />
+                {isYouTubeUrl(form.post_url) && (
+                  <button
+                    type="button" className="btn btn-secondary shrink-0"
+                    onClick={() => autofillYouTube()}
+                    disabled={ytBusy}
+                    title="Fetch title, date and metrics from YouTube"
+                  >
+                    {ytBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    <span className="hidden sm:inline">{ytBusy ? "Fetching…" : "Auto-fill"}</span>
+                  </button>
+                )}
+              </div>
+              {ytHint && <p className="text-[12px] text-emerald-700 mt-1.5 flex items-center gap-1"><Sparkles size={12} /> {ytHint}</p>}
+              {ytError && <p className="text-[12px] text-amber-700 mt-1.5">{ytError}</p>}
             </div>
             <div>
               <label className="label" htmlFor="sp-date">Posted At</label>

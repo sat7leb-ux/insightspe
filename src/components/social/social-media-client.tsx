@@ -10,6 +10,8 @@ import { PageHeader, Tag, EmptyState, StatCard } from "@/components/ui/primitive
 import { useToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/modal";
 import { formatNumber, formatDate, downloadCsv } from "@/lib/utils";
+import { isYouTubeUrl, fetchYouTubeMetrics, isoToLocalInput, syncYouTubePost } from "@/lib/social-sync";
+import { Sparkles, RefreshCw } from "lucide-react";
 import {
   Share2, Plus, Pencil, Trash2, ExternalLink, Eye, ThumbsUp, MessageSquare,
   Repeat2, Loader2, Link2, Search, Download, Facebook, Instagram, Youtube, Globe, Music2,
@@ -70,6 +72,10 @@ export function SocialMediaClient({
     posted_at: "", views: "0", likes: "0", comments_count: "0", shares: "0",
   });
   const [postError, setPostError] = useState<string | null>(null);
+  const [ytBusy, setYtBusy] = useState(false);
+  const [ytHint, setYtHint] = useState<string | null>(null);
+  const [ytError, setYtError] = useState<string | null>(null);
+  const [syncingId, setSyncingId] = useState<string | null>(null);
 
   // link account -> events modal
   const [linkModal, setLinkModal] = useState(false);
@@ -234,6 +240,43 @@ export function SocialMediaClient({
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to update links", "error");
     } finally { setBusy(false); }
+  };
+
+  // ---- YouTube auto-fill ----
+  const autofillYouTube = async () => {
+    setYtError(null);
+    setYtHint(null);
+    setYtBusy(true);
+    try {
+      const m = await fetchYouTubeMetrics(postForm.post_url);
+      setPostForm((f) => ({
+        ...f,
+        content_summary: f.content_summary || m.title,
+        posted_at: f.posted_at || isoToLocalInput(m.publishedAt),
+        views: String(m.views),
+        likes: String(m.likes),
+        comments_count: String(m.comments),
+      }));
+      setYtHint(`Fetched “${m.title}” — ${m.channelTitle}`);
+    } catch (err) {
+      setYtError(err instanceof Error ? err.message : "Could not fetch YouTube data");
+    } finally {
+      setYtBusy(false);
+    }
+  };
+
+  // refresh metrics of an existing YouTube post from the API
+  const syncPost = async (p: SocialPost) => {
+    setSyncingId(p.id);
+    try {
+      const m = await syncYouTubePost({ id: p.id, post_url: p.post_url });
+      toast(`Synced — ${formatNumber(m.views)} views, ${formatNumber(m.likes)} likes`);
+      router.refresh();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Sync failed", "error");
+    } finally {
+      setSyncingId(null);
+    }
   };
 
   // ---- post CRUD ----
@@ -518,6 +561,14 @@ export function SocialMediaClient({
                   </div>
                   {canWrite && (
                     <div className="flex items-center gap-1">
+                      {isYouTubeUrl(p.post_url) && (
+                        <button
+                          className="btn btn-ghost btn-sm" title="Sync metrics from YouTube"
+                          onClick={() => syncPost(p)} disabled={syncingId === p.id}
+                        >
+                          {syncingId === p.id ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+                        </button>
+                      )}
                       <button className="btn btn-ghost btn-sm" title="Edit" onClick={() => openEditPost(p)}><Pencil size={13} /></button>
                       <button className="btn btn-ghost btn-sm hover:!text-red-600" title="Delete" onClick={() => deletePost(p)}><Trash2 size={13} /></button>
                     </div>
@@ -668,7 +719,27 @@ export function SocialMediaClient({
           <div className="grid sm:grid-cols-2 gap-3">
             <div>
               <label className="label" htmlFor="pm-url">Post URL</label>
-              <input id="pm-url" className="input" type="url" value={postForm.post_url} onChange={(e) => setPostForm({ ...postForm, post_url: e.target.value })} placeholder="https://facebook.com/…/posts/…" />
+              <div className="flex gap-2">
+                <input
+                  id="pm-url" className="input" type="url"
+                  value={postForm.post_url}
+                  onChange={(e) => { setPostForm({ ...postForm, post_url: e.target.value }); setYtHint(null); }}
+                  placeholder="https://youtube.com/watch?v=… or facebook.com/…"
+                />
+                {isYouTubeUrl(postForm.post_url) && (
+                  <button
+                    type="button" className="btn btn-secondary shrink-0"
+                    onClick={() => autofillYouTube()}
+                    disabled={ytBusy}
+                    title="Fetch title, date and metrics from YouTube"
+                  >
+                    {ytBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    <span className="hidden sm:inline">{ytBusy ? "Fetching…" : "Auto-fill"}</span>
+                  </button>
+                )}
+              </div>
+              {ytHint && <p className="text-[12px] text-emerald-700 mt-1.5 flex items-center gap-1"><Sparkles size={12} /> {ytHint}</p>}
+              {ytError && <p className="text-[12px] text-amber-700 mt-1.5">{ytError}</p>}
             </div>
             <div>
               <label className="label" htmlFor="pm-campaign">Campaign Tag</label>

@@ -117,6 +117,20 @@ npm run dev        # http://localhost:3000
 - Contacts under 18 require parental consent before insert (validated in the UI and auditable in the data model).
 - Storage bucket `event-gallery` is public-read, authenticated-write gated by `can_write_events()`.
 - No secrets in the client bundle; the admin edge function authenticates the caller before using the service role.
+- **No social media passwords are ever stored.** Platforms are linked by URL + campaign tag only. YouTube metrics are fetched server-side with an API key (public data only).
+
+## Social Media Integration
+
+The Social Media section (sidebar) links SAT-7's social accounts to events:
+
+- **Accounts registry** — add each account once (platform, handle, followers, URL, SAT-7 channel), then link it to any events
+- **Posts** — record each post with its URL, type, campaign tag, metrics and linked event
+- **YouTube auto-sync (optional)** — set `YOUTUBE_API_KEY` and pasting a YouTube URL auto-fills the title, date, views, likes and comments. A "Sync" button on saved YouTube posts refreshes the metrics. Setup:
+  1. Google Cloud Console → create (or pick) a project
+  2. APIs & Services → Library → enable **YouTube Data API v3**
+  3. APIs & Services → Credentials → **Create credentials → API key**
+  4. Add it as `YOUTUBE_API_KEY` in Vercel → Project → Settings → Environment Variables (Production + Preview)
+- **Facebook / Instagram / TikTok** — manual entry (their APIs require OAuth apps and business verification; the schema's `external_id` columns are ready if you add OAuth later)
 
 ## Demo Data
 
