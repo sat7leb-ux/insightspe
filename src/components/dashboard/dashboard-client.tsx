@@ -3,8 +3,8 @@
 import { useMemo } from "react";
 import Link from "next/link";
 import {
-  CalendarDays, Users, UserCheck, Baby, Eye, Share2, MessageSquare, ThumbsUp,
-  Contact, Handshake, Package, Trophy, Banknote, Radio, CheckCircle2, PlayCircle,
+  CalendarDays, Users, UserCheck, Baby,
+  Contact, Handshake, Package, Trophy, CheckCircle2, PlayCircle,
 } from "lucide-react";
 import { StatCard, PageHeader, StatusBadge, ProgressBar, Tag } from "@/components/ui/primitives";
 import { BarChart, LineChart, DonutChart } from "@/components/ui/charts";
@@ -49,13 +49,6 @@ export function DashboardClient({
     [events],
   );
 
-  const digitalTotals = useMemo(() => [
-    { label: "Views", value: kpis.totalViews, color: "#2563eb" },
-    { label: "Likes", value: kpis.likes, color: "#ec4899" },
-    { label: "Comments", value: kpis.comments, color: "#0ea5e9" },
-    { label: "Shares", value: kpis.shares, color: "#10b981" },
-  ], [kpis]);
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -76,18 +69,11 @@ export function DashboardClient({
         <StatCard label="Total Attendees" value={formatNumber(kpis.totalAttendees)} icon={Users} tone="brand" hint={canViewFinancials && kpis.costPerAttendee ? `${formatMoney(kpis.costPerAttendee)} / attendee` : undefined} />
         <StatCard label="Adults" value={formatNumber(kpis.adults)} icon={UserCheck} tone="violet" />
         <StatCard label="Children" value={formatNumber(kpis.children)} icon={Baby} tone="gold" />
-        <StatCard label="Digital Views" value={formatNumber(kpis.totalViews)} icon={Eye} tone="sky" />
-        <StatCard label="Shares" value={formatNumber(kpis.shares)} icon={Share2} tone="green" />
-        <StatCard label="Comments" value={formatNumber(kpis.comments)} icon={MessageSquare} tone="violet" />
-        <StatCard label="Likes" value={formatNumber(kpis.likes)} icon={ThumbsUp} tone="red" />
         <StatCard label="New Contacts" value={formatNumber(kpis.newContacts)} icon={Contact} tone="sky" />
         <StatCard label="New Partnerships" value={formatNumber(kpis.newPartnerships)} icon={Handshake} tone="brand" />
         <StatCard label="Materials Distributed" value={formatNumber(kpis.materialsDistributed)} icon={Package} tone="gold" />
         <StatCard label="Avg Attendance" value={formatNumber(kpis.avgAttendance)} icon={Users} tone="default" hint="per event" />
         <StatCard label="Goal Completion" value={`${Math.round(kpis.goalCompletion * 100)}%`} icon={Trophy} tone="green" />
-        {canViewFinancials && (
-          <StatCard label="Cost / Reach" value={kpis.costPerView ? formatMoney(kpis.costPerView) : "—"} icon={Banknote} tone="gold" hint={kpis.totalCost ? `Total spend ${formatMoney(kpis.totalCost)}` : undefined} />
-        )}
       </div>
 
       {/* charts row 1 */}
@@ -126,32 +112,9 @@ export function DashboardClient({
         </div>
       </div>
 
-      {/* digital + status */}
+      {/* status */}
       <div className="grid gap-4 lg:grid-cols-3">
         <div className="card p-5 lg:col-span-2">
-          <h3 className="font-semibold text-[14px] mb-4">Digital Engagement</h3>
-          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 140px), 1fr))" }}>
-            {digitalTotals.map((d) => (
-              <div key={d.label} className="rounded-xl p-3" style={{ background: "var(--surface-2)" }}>
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{d.label}</p>
-                <p className="text-[20px] font-bold mt-1 tabular-nums" style={{ color: d.color }}>{formatNumber(d.value)}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4">
-            <LineChart
-              labels={overTime.labels}
-              datasets={[{ label: "Views", data: overTime.labels.map((_, i) => events.filter((e) => {
-                const d = new Date(); d.setMonth(d.getMonth() - (overTime.labels.length - 1 - i));
-                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
-                return e.start_date.startsWith(key);
-              }).reduce((s, e) => s + e.views, 0)), color: "#2563eb" }]}
-              area
-              height={160}
-            />
-          </div>
-        </div>
-        <div className="card p-5">
           <h3 className="font-semibold text-[14px] mb-4">Event Status</h3>
           <DonutChart labels={byStatus.labels} data={byStatus.data} height={240} />
         </div>
