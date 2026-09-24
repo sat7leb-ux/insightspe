@@ -16,6 +16,8 @@ import { useToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/modal";
 import { EventForm } from "@/components/events/event-form";
 import { GalleryTab } from "./gallery-tab";
+import { SocialMediaTab } from "./social-media-tab";
+import type { SocialAccount, SocialPost } from "@/lib/types";
 import { formatNumber, formatMoney, formatDate, formatDateTime, eventDays, dateRangeLabel, downloadCsv } from "@/lib/utils";
 import {
   MapPin, Building2, Users, Baby, UserCheck, Eye, Share2, MessageSquare, ThumbsUp,
@@ -29,6 +31,7 @@ const TABS = [
   { id: "daily", label: "Daily Reports" },
   { id: "attendance", label: "Attendance" },
   { id: "reach", label: "Reach & Engagement" },
+  { id: "social", label: "Social Media" },
   { id: "contacts", label: "Leads & Contacts" },
   { id: "partnerships", label: "Partnerships" },
   { id: "testimonies", label: "Testimonies" },
@@ -46,6 +49,7 @@ export function EventDetailClient({
   event, partner, partners, channels, platforms, profiles, eventTypes, participants, goals, dailyReports,
   gallery, gallerySections, contacts, partnerships, materials, follows, comments, surveys, testimonies,
   conversations, activity, role, currentUserId, canFinancial,
+  socialAccounts, allSocialAccounts, socialPosts,
 }: {
   event: EventRow;
   partner: Partner | null;
@@ -68,6 +72,9 @@ export function EventDetailClient({
   testimonies: Testimony[];
   conversations: Conversation[];
   activity: ActivityLogEntry[];
+  socialAccounts: SocialAccount[];
+  allSocialAccounts: SocialAccount[];
+  socialPosts: SocialPost[];
   role: UserRole;
   currentUserId: string;
   canFinancial: boolean;
@@ -156,6 +163,7 @@ export function EventDetailClient({
               const count =
                 t.id === "goals" ? goals.length :
                 t.id === "daily" ? dailyReports.length :
+                t.id === "social" ? socialPosts.length :
                 t.id === "contacts" ? contacts.length :
                 t.id === "partnerships" ? partnerships.length :
                 t.id === "materials" ? materials.length :
@@ -192,6 +200,15 @@ export function EventDetailClient({
           {tab === "daily" && <DailyReportsTab event={event} reports={dailyReports} canWrite={canWrite} profiles={profiles} />}
           {tab === "attendance" && <AttendanceTab event={event} reports={dailyReports} />}
           {tab === "reach" && <ReachTab event={event} platforms={eventPlatforms} follows={follows} canWrite={canWrite} />}
+          {tab === "social" && (
+            <SocialMediaTab
+              event={event}
+              accounts={socialAccounts}
+              allAccounts={allSocialAccounts}
+              posts={socialPosts}
+              canWrite={canWrite}
+            />
+          )}
           {tab === "contacts" && <ContactsTab eventId={event.id} contacts={contacts} profiles={profiles} canWrite={canWrite} />}
           {tab === "partnerships" && <PartnershipsTab eventId={event.id} partnerships={partnerships} profiles={profiles} canWrite={canWrite} />}
           {tab === "testimonies" && <LinkedListTab items={testimonies.map((t) => ({ id: t.id, title: t.author_name || "Anonymous", subtitle: t.country, body: t.summary, date: t.content_date }))} icon={MessageSquareQuote} emptyLabel="testimonies" />}

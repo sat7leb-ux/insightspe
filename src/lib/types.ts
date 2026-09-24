@@ -267,6 +267,42 @@ export interface SocialFollow {
   source_campaign: string;
 }
 
+export interface SocialAccount {
+  id: string;
+  platform: string;
+  handle: string;
+  display_name: string;
+  account_url: string;
+  channel_id: string | null;
+  followers: number;
+  external_id: string;
+  notes: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  channels?: Pick<Channel, 'id' | 'name' | 'color'> | null;
+}
+
+export interface SocialPost {
+  id: string;
+  account_id: string;
+  event_id: string | null;
+  campaign_tag: string;
+  post_url: string;
+  content_summary: string;
+  post_type: 'Post' | 'Video' | 'Reel' | 'Story' | 'Live' | 'Article' | 'Other';
+  posted_at: string | null;
+  views: number;
+  likes: number;
+  comments_count: number;
+  shares: number;
+  external_id: string;
+  created_at: string;
+  updated_at: string;
+  social_accounts?: Pick<SocialAccount, 'id' | 'platform' | 'handle' | 'display_name' | 'account_url' | 'channel_id'> & { channels?: { name: string; color: string } | null } | null;
+  events?: { id: string; name: string } | null;
+}
+
 export interface EventComment {
   id: string;
   event_id: string;
