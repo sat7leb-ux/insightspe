@@ -152,7 +152,7 @@ export function EventForm({
       const volunteerCount = volunteerNames.length;
 
       const buildPayload = (includeNames: boolean) => {
-        const { staff_ids, ...rest } = form;
+        const { staff_ids, volunteer_names, ...rest } = form;
         return {
           ...rest,
           partner_id: form.partner_id || null,
@@ -196,7 +196,12 @@ export function EventForm({
       }
       onDone();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Could not save event";
+      const msg =
+        err instanceof Error
+          ? err.message
+          : typeof err === "object" && err && "message" in err
+            ? String((err as { message: string }).message)
+            : "Could not save event";
       setError(msg.includes("row-level security") ? "Permission denied — your role cannot write events." : msg);
     } finally {
       setSaving(false);
