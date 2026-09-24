@@ -45,11 +45,12 @@ interface FormState {
   volunteer_names: string;
   manager_id: string;
   campaign_tag: string;
-  views: number;
-  unique_views: number;
-  shares: number;
-  comments_count: number;
-  likes: number;
+  kpi_views: number;
+  kpi_likes: number;
+  kpi_comments: number;
+  kpi_shares: number;
+  kpi_followers: number;
+  kpi_attendees: number;
   budget: string;
   actual_cost: string;
   currency: string;
@@ -96,11 +97,12 @@ export function EventForm({
     volunteer_names: event?.volunteer_names ?? "",
     manager_id: event?.manager_id ?? "",
     campaign_tag: event?.campaign_tag ?? "",
-    views: event?.views ?? 0,
-    unique_views: event?.unique_views ?? 0,
-    shares: event?.shares ?? 0,
-    comments_count: event?.comments_count ?? 0,
-    likes: event?.likes ?? 0,
+    kpi_views: 0,
+    kpi_likes: 0,
+    kpi_comments: 0,
+    kpi_shares: 0,
+    kpi_followers: 0,
+    kpi_attendees: 0,
     budget: event?.budget != null ? String(event.budget) : "",
     actual_cost: event?.actual_cost != null ? String(event.actual_cost) : "",
     currency: event?.currency ?? "USD",
@@ -160,16 +162,42 @@ export function EventForm({
       const staffCount = form.staff_ids.length;
       const volunteerCount = volunteerNames.length;
 
-      const buildPayload = (includeNames: boolean) => ({
-        ...form,
-        partner_id: form.partner_id || null,
-        manager_id: form.manager_id || null,
-        staff_count: staffCount,
-        volunteer_count: volunteerCount,
-        ...(includeNames ? { volunteer_names: volunteerNames.join("\n") } : {}),
-        budget: form.budget === "" ? null : Number(form.budget),
-        actual_cost: form.actual_cost === "" ? null : Number(form.actual_cost),
-      });
+      const buildPayload = (includeNames: boolean) => {
+        const { kpi_views, kpi_likes, kpi_comments, kpi_shares, kpi_followers, kpi_attendees, ...rest } = form;
+        return {
+          ...rest,
+          partner_id: form.partner_id || null,
+          manager_id: form.manager_id || null,
+          staff_count: staffCount,
+          volunteer_count: volunteerCount,
+          ...(includeNames ? { volunteer_names: volunteerNames.join("\n") } : {}),
+          budget: form.budget === "" ? null : Number(form.budget),
+          actual_cost: form.actual_cost === "" ? null : Number(form.actual_cost),
+        };
+      };
+
+      // KPI targets -> event goal rows
+      const kpiGoals = ([
+        ["Reach 100,000 views", form.kpi_views, "views"],
+        ["Earn 5,000 likes", form.kpi_likes, "likes"],
+        ["Generate 500 comments", form.kpi_comments, "comments"],
+        ["Get 1,000 shares", form.kpi_shares, "shares"],
+        ["Gain 2,000 new followers", form.kpi_followers, "followers"],
+        ["Reach target attendance", form.kpi_attendees, "attendees"],
+      ] as const).filter(([, target]) => target > 0)
+        .map(([goal, target, unit]) => ({
+          goal: goal.replace(/[\d,]+/, String(target)),
+          target,
+          unit,
+          status: "Not Started",
+        }));
+
+      const syncKpiGoals = async (eventId: string) => {
+        if (kpiGoals.length === 0) return;
+        // remove previous auto-generated KPI goals, keep manual ones
+        await sb.from("event_goals").delete().eq("event_id", eventId).in("unit", ["views", "likes", "comments", "shares", "followers", "attendees"]);
+        await sb.from("event_goals").insert(kpiGoals.map((g) => ({ ...g, event_id: eventId })));
+      };
 
       const syncStaff = async (eventId: string) => {
         await sb.from("event_participants").delete().eq("event_id", eventId).eq("responsibility", "Staff");
@@ -187,6 +215,7 @@ export function EventForm({
         }
         if (error) throw error;
         await syncStaff(event.id);
+        await syncKpiGoals(event.id);
         toast("Event updated successfully");
       } else {
         let res = await sb.from("events").insert(buildPayload(true)).select("id").single();
@@ -197,6 +226,7 @@ export function EventForm({
         if (res.error) throw res.error;
         const data = res.data!;
         await syncStaff(data.id);
+        await syncKpiGoals(data.id);
         toast("Event created successfully");
         router.push(`/events/${data.id}`);
       }
@@ -422,30 +452,33 @@ export function EventForm({
         </div>
       </Section>
 
-      <Section title="Reach & Engagement (totals)">
+      <Section title="KPI Targets">
+        <p className="sm:col-span-2 text-[12.5px] text-slate-500 -mt-1 mb-1">
+          Set the digital targets for this event. Actual performance is tracked automatically from the posts linked in the Social Media tab.
+        </p>
         <div>
-          <label className="label" htmlFor="ev-views">Story / Post Views</label>
-          <input id="ev-views" type="number" min={0} className="input" value={form.views} onChange={(e) => set("views", Number(e.target.value))} />
+          <label className="label" htmlFor="kpi-views">Target Views</label>
+          <input id="kpi-views" type="number" min={0} className="input" value={form.kpi_views} onChange={(e) => set("kpi_views", Number(e.target.value))} placeholder="e.g. 100000" />
         </div>
         <div>
-          <label className="label" htmlFor="ev-unique">Unique Views</label>
-          <input id="ev-unique" type="number" min={0} className="input" value={form.unique_views} onChange={(e) => set("unique_views", Number(e.target.value))} />
+          <label className="label" htmlFor="kpi-likes">Target Likes</label>
+          <input id="kpi-likes" type="number" min={0} className="input" value={form.kpi_likes} onChange={(e) => set("kpi_likes", Number(e.target.value))} placeholder="e.g. 5000" />
         </div>
         <div>
-          <label className="label" htmlFor="ev-shares">Shares</label>
-          <input id="ev-shares" type="number" min={0} className="input" value={form.shares} onChange={(e) => set("shares", Number(e.target.value))} />
+          <label className="label" htmlFor="kpi-comments">Target Comments</label>
+          <input id="kpi-comments" type="number" min={0} className="input" value={form.kpi_comments} onChange={(e) => set("kpi_comments", Number(e.target.value))} placeholder="e.g. 500" />
         </div>
         <div>
-          <label className="label" htmlFor="ev-comments">Comments</label>
-          <input id="ev-comments" type="number" min={0} className="input" value={form.comments_count} onChange={(e) => set("comments_count", Number(e.target.value))} />
+          <label className="label" htmlFor="kpi-shares">Target Shares</label>
+          <input id="kpi-shares" type="number" min={0} className="input" value={form.kpi_shares} onChange={(e) => set("kpi_shares", Number(e.target.value))} placeholder="e.g. 1000" />
         </div>
         <div>
-          <label className="label" htmlFor="ev-likes">Likes</label>
-          <input id="ev-likes" type="number" min={0} className="input" value={form.likes} onChange={(e) => set("likes", Number(e.target.value))} />
+          <label className="label" htmlFor="kpi-followers">Target New Followers</label>
+          <input id="kpi-followers" type="number" min={0} className="input" value={form.kpi_followers} onChange={(e) => set("kpi_followers", Number(e.target.value))} placeholder="e.g. 2000" />
         </div>
-        <div className="sm:col-span-2">
-          <p className="label">Platforms Reached</p>
-          <PlatformPicker form={form} set={set} />
+        <div>
+          <label className="label" htmlFor="kpi-attendees">Target Attendance</label>
+          <input id="kpi-attendees" type="number" min={0} className="input" value={form.kpi_attendees} onChange={(e) => set("kpi_attendees", Number(e.target.value))} placeholder="e.g. 3000" />
         </div>
       </Section>
 
@@ -485,36 +518,3 @@ export function EventForm({
   );
 }
 
-function PlatformPicker({ form, set }: { form: FormState; set: <K extends keyof FormState>(k: K, v: FormState[K]) => void }) {
-  const [platforms, setPlatforms] = useState<{ id: string; name: string; color: string }[]>([]);
-
-  useEffect(() => {
-    let cancelled = false;
-    createClient()
-      .from("platforms").select("id, name, color").eq("is_active", true).order("sort_order")
-      .then(({ data }) => { if (!cancelled) setPlatforms(data ?? []); });
-    return () => { cancelled = true; };
-  }, []);
-
-  return (
-    <div className="flex flex-wrap gap-2">
-      {platforms.map((p) => (
-        <button
-          type="button"
-          key={p.id}
-          onClick={() => set("platform_ids", form.platform_ids.includes(p.id) ? form.platform_ids.filter((x) => x !== p.id) : [...form.platform_ids, p.id])}
-          aria-pressed={form.platform_ids.includes(p.id)}
-          className="badge"
-          style={{
-            background: form.platform_ids.includes(p.id) ? p.color : "var(--surface-2)",
-            color: form.platform_ids.includes(p.id) ? "#fff" : "var(--muted)",
-            padding: "6px 14px",
-            fontSize: "12.5px",
-          }}
-        >
-          {p.name}
-        </button>
-      ))}
-    </div>
-  );
-}
