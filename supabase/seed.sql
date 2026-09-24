@@ -5,12 +5,12 @@
 -- ============================================================
 
 -- ---------- Reference data ----------
-INSERT INTO public.channels (name, slug, color, sort_order) VALUES
-  ('SAT-7 KIDS', 'sat7-kids', '#f59e0b', 1),
-  ('SAT-7 ARABIC', 'sat7-arabic', '#2563eb', 2),
-  ('SAT-7 PLUS', 'sat7-plus', '#10b981', 3),
-  ('SAT-7 ACADEMY', 'sat7-academy', '#8b5cf6', 4)
-ON CONFLICT (slug) DO NOTHING;
+INSERT INTO public.channels (name, slug, color, sort_order, is_active) VALUES
+  ('SAT-7 KIDS', 'sat7-kids', '#f59e0b', 1, true),
+  ('SAT-7 ARABIC', 'sat7-arabic', '#2563eb', 2, true),
+  ('SAT-7 PLUS', 'sat7-plus', '#10b981', 3, false),
+  ('SAT-7 ACADEMY', 'sat7-academy', '#8b5cf6', 4, false)
+ON CONFLICT (slug) DO UPDATE SET is_active = EXCLUDED.is_active;
 
 INSERT INTO public.countries (name, code, region) VALUES
   ('Lebanon','LB','MENA'),
