@@ -45,12 +45,6 @@ interface FormState {
   volunteer_names: string;
   manager_id: string;
   campaign_tag: string;
-  kpi_views: number;
-  kpi_likes: number;
-  kpi_comments: number;
-  kpi_shares: number;
-  kpi_followers: number;
-  kpi_attendees: number;
   budget: string;
   actual_cost: string;
   currency: string;
@@ -97,12 +91,6 @@ export function EventForm({
     volunteer_names: event?.volunteer_names ?? "",
     manager_id: event?.manager_id ?? "",
     campaign_tag: event?.campaign_tag ?? "",
-    kpi_views: 0,
-    kpi_likes: 0,
-    kpi_comments: 0,
-    kpi_shares: 0,
-    kpi_followers: 0,
-    kpi_attendees: 0,
     budget: event?.budget != null ? String(event.budget) : "",
     actual_cost: event?.actual_cost != null ? String(event.actual_cost) : "",
     currency: event?.currency ?? "USD",
@@ -163,7 +151,7 @@ export function EventForm({
       const volunteerCount = volunteerNames.length;
 
       const buildPayload = (includeNames: boolean) => {
-        const { kpi_views, kpi_likes, kpi_comments, kpi_shares, kpi_followers, kpi_attendees, ...rest } = form;
+        const { staff_ids, ...rest } = form;
         return {
           ...rest,
           partner_id: form.partner_id || null,
@@ -174,29 +162,6 @@ export function EventForm({
           budget: form.budget === "" ? null : Number(form.budget),
           actual_cost: form.actual_cost === "" ? null : Number(form.actual_cost),
         };
-      };
-
-      // KPI targets -> event goal rows
-      const kpiGoals = ([
-        ["Reach 100,000 views", form.kpi_views, "views"],
-        ["Earn 5,000 likes", form.kpi_likes, "likes"],
-        ["Generate 500 comments", form.kpi_comments, "comments"],
-        ["Get 1,000 shares", form.kpi_shares, "shares"],
-        ["Gain 2,000 new followers", form.kpi_followers, "followers"],
-        ["Reach target attendance", form.kpi_attendees, "attendees"],
-      ] as const).filter(([, target]) => target > 0)
-        .map(([goal, target, unit]) => ({
-          goal: goal.replace(/[\d,]+/, String(target)),
-          target,
-          unit,
-          status: "Not Started",
-        }));
-
-      const syncKpiGoals = async (eventId: string) => {
-        if (kpiGoals.length === 0) return;
-        // remove previous auto-generated KPI goals, keep manual ones
-        await sb.from("event_goals").delete().eq("event_id", eventId).in("unit", ["views", "likes", "comments", "shares", "followers", "attendees"]);
-        await sb.from("event_goals").insert(kpiGoals.map((g) => ({ ...g, event_id: eventId })));
       };
 
       const syncStaff = async (eventId: string) => {
@@ -215,7 +180,6 @@ export function EventForm({
         }
         if (error) throw error;
         await syncStaff(event.id);
-        await syncKpiGoals(event.id);
         toast("Event updated successfully");
       } else {
         let res = await sb.from("events").insert(buildPayload(true)).select("id").single();
@@ -226,7 +190,6 @@ export function EventForm({
         if (res.error) throw res.error;
         const data = res.data!;
         await syncStaff(data.id);
-        await syncKpiGoals(data.id);
         toast("Event created successfully");
         router.push(`/events/${data.id}`);
       }
@@ -449,36 +412,6 @@ export function EventForm({
           <p className="text-[12px] text-slate-500">
             Team size: <strong>{form.staff_ids.length + volunteerList.length}</strong> ({form.staff_ids.length} staff · {volunteerList.length} volunteers)
           </p>
-        </div>
-      </Section>
-
-      <Section title="KPI Targets">
-        <p className="sm:col-span-2 text-[12.5px] text-slate-500 -mt-1 mb-1">
-          Set the digital targets for this event. Actual performance is tracked automatically from the posts linked in the Social Media tab.
-        </p>
-        <div>
-          <label className="label" htmlFor="kpi-views">Target Views</label>
-          <input id="kpi-views" type="number" min={0} className="input" value={form.kpi_views} onChange={(e) => set("kpi_views", Number(e.target.value))} placeholder="e.g. 100000" />
-        </div>
-        <div>
-          <label className="label" htmlFor="kpi-likes">Target Likes</label>
-          <input id="kpi-likes" type="number" min={0} className="input" value={form.kpi_likes} onChange={(e) => set("kpi_likes", Number(e.target.value))} placeholder="e.g. 5000" />
-        </div>
-        <div>
-          <label className="label" htmlFor="kpi-comments">Target Comments</label>
-          <input id="kpi-comments" type="number" min={0} className="input" value={form.kpi_comments} onChange={(e) => set("kpi_comments", Number(e.target.value))} placeholder="e.g. 500" />
-        </div>
-        <div>
-          <label className="label" htmlFor="kpi-shares">Target Shares</label>
-          <input id="kpi-shares" type="number" min={0} className="input" value={form.kpi_shares} onChange={(e) => set("kpi_shares", Number(e.target.value))} placeholder="e.g. 1000" />
-        </div>
-        <div>
-          <label className="label" htmlFor="kpi-followers">Target New Followers</label>
-          <input id="kpi-followers" type="number" min={0} className="input" value={form.kpi_followers} onChange={(e) => set("kpi_followers", Number(e.target.value))} placeholder="e.g. 2000" />
-        </div>
-        <div>
-          <label className="label" htmlFor="kpi-attendees">Target Attendance</label>
-          <input id="kpi-attendees" type="number" min={0} className="input" value={form.kpi_attendees} onChange={(e) => set("kpi_attendees", Number(e.target.value))} placeholder="e.g. 3000" />
         </div>
       </Section>
 

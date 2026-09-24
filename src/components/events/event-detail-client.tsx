@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import type {
   EventRow, Partner, Channel, Country, Profile, EventParticipant, EventGoal, DailyReport,
   GalleryImage, GallerySection, EventContact, EventPartnership, EventMaterial, SocialFollow,
-  EventComment, EventSurvey, Testimony, Conversation, ActivityLogEntry, EventTypeRow,
+  ActivityLogEntry, EventTypeRow,
 } from "@/lib/types";
 import { GOAL_STATUSES, PARTNERSHIP_STATUSES, FOLLOW_UP_STATUSES, PARTICIPATION_STATUSES, canWriteEvents, canViewFinancials, type UserRole } from "@/lib/types";
 import { StatusBadge, Tag, EmptyState, ProgressBar, Avatar } from "@/components/ui/primitives";
@@ -16,8 +16,6 @@ import { useToast } from "@/components/ui/toast";
 import { Modal } from "@/components/ui/modal";
 import { EventForm } from "@/components/events/event-form";
 import { GalleryTab } from "./gallery-tab";
-import { SocialMediaTab } from "./social-media-tab";
-import type { SocialAccount, SocialPost } from "@/lib/types";
 import { formatNumber, formatMoney, formatDate, formatDateTime, eventDays, dateRangeLabel, downloadCsv } from "@/lib/utils";
 import {
   MapPin, Building2, Users, Baby, UserCheck, Eye, Share2, MessageSquare, ThumbsUp,
@@ -30,16 +28,10 @@ const TABS = [
   { id: "goals", label: "Goals" },
   { id: "daily", label: "Daily Reports" },
   { id: "attendance", label: "Attendance" },
-  { id: "reach", label: "Reach & Engagement" },
-  { id: "social", label: "Social Media" },
   { id: "contacts", label: "Leads & Contacts" },
   { id: "partnerships", label: "Partnerships" },
-  { id: "testimonies", label: "Testimonies" },
-  { id: "conversations", label: "Conversations" },
   { id: "materials", label: "Materials" },
   { id: "gallery", label: "Gallery" },
-  { id: "survey", label: "Survey" },
-  { id: "comments", label: "Comments" },
   { id: "activity", label: "Activity Log" },
 ] as const;
 
@@ -47,9 +39,8 @@ type TabId = (typeof TABS)[number]["id"];
 
 export function EventDetailClient({
   event, partner, partners, channels, platforms, profiles, eventTypes, countriesList, areas, staffIds, participants, goals, dailyReports,
-  gallery, gallerySections, contacts, partnerships, materials, follows, comments, surveys, testimonies,
-  conversations, activity, role, currentUserId, canFinancial,
-  socialAccounts, allSocialAccounts, socialPosts,
+  gallery, gallerySections, contacts, partnerships, materials, follows,
+  activity, role, currentUserId, canFinancial,
 }: {
   event: EventRow;
   partner: Partner | null;
@@ -70,14 +61,7 @@ export function EventDetailClient({
   partnerships: EventPartnership[];
   materials: EventMaterial[];
   follows: SocialFollow[];
-  comments: EventComment[];
-  surveys: EventSurvey[];
-  testimonies: Testimony[];
-  conversations: Conversation[];
   activity: ActivityLogEntry[];
-  socialAccounts: SocialAccount[];
-  allSocialAccounts: SocialAccount[];
-  socialPosts: SocialPost[];
   role: UserRole;
   currentUserId: string;
   canFinancial: boolean;
@@ -166,15 +150,11 @@ export function EventDetailClient({
               const count =
                 t.id === "goals" ? goals.length :
                 t.id === "daily" ? dailyReports.length :
-                t.id === "social" ? socialPosts.length :
                 t.id === "contacts" ? contacts.length :
                 t.id === "partnerships" ? partnerships.length :
                 t.id === "materials" ? materials.length :
                 t.id === "gallery" ? gallery.length :
-                t.id === "survey" ? surveys.length :
-                t.id === "comments" ? comments.length :
-                t.id === "testimonies" ? testimonies.length :
-                t.id === "conversations" ? conversations.length : undefined;
+                undefined;
               return (
                 <button
                   key={t.id}
@@ -202,24 +182,10 @@ export function EventDetailClient({
           {tab === "goals" && <GoalsTab eventId={event.id} goals={goals} profiles={profiles} canWrite={canWrite} />}
           {tab === "daily" && <DailyReportsTab event={event} reports={dailyReports} canWrite={canWrite} profiles={profiles} />}
           {tab === "attendance" && <AttendanceTab event={event} reports={dailyReports} />}
-          {tab === "reach" && <ReachTab event={event} platforms={eventPlatforms} follows={follows} canWrite={canWrite} />}
-          {tab === "social" && (
-            <SocialMediaTab
-              event={event}
-              accounts={socialAccounts}
-              allAccounts={allSocialAccounts}
-              posts={socialPosts}
-              canWrite={canWrite}
-            />
-          )}
           {tab === "contacts" && <ContactsTab eventId={event.id} contacts={contacts} profiles={profiles} canWrite={canWrite} />}
           {tab === "partnerships" && <PartnershipsTab eventId={event.id} partnerships={partnerships} profiles={profiles} canWrite={canWrite} />}
-          {tab === "testimonies" && <LinkedListTab items={testimonies.map((t) => ({ id: t.id, title: t.author_name || "Anonymous", subtitle: t.country, body: t.summary, date: t.content_date }))} icon={MessageSquareQuote} emptyLabel="testimonies" />}
-          {tab === "conversations" && <LinkedListTab items={conversations.map((c) => ({ id: c.id, title: c.person_name || "Anonymous", subtitle: `${c.platform} · ${c.country}`, body: c.summary, date: c.content_date }))} icon={MessagesSquare} emptyLabel="conversations" />}
           {tab === "materials" && <MaterialsTab eventId={event.id} materials={materials} canWrite={canWrite} />}
           {tab === "gallery" && <GalleryTab eventId={event.id} sections={gallerySections} images={gallery} canWrite={canWrite} readOnly={!canWrite} />}
-          {tab === "survey" && <SurveyTab eventId={event.id} surveys={surveys} canWrite={canWrite} />}
-          {tab === "comments" && <CommentsTab eventId={event.id} comments={comments} currentUserId={currentUserId} isAdmin={role === "super_admin" || role === "admin"} profiles={profiles} />}
           {tab === "activity" && <ActivityTab activity={activity} />}
         </div>
       </div>
@@ -661,94 +627,6 @@ function AttendanceTab({ event, reports }: { event: EventRow; reports: DailyRepo
   );
 }
 
-// ================= Reach & Engagement =================
-function ReachTab({ event, platforms, follows, canWrite }: { event: EventRow; platforms: { id: string; name: string; color: string }[]; follows: SocialFollow[]; canWrite: boolean }) {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ platform: "Facebook", channel: "", follows_gained: "0", follow_date: new Date().toISOString().slice(0, 10), source_campaign: event.campaign_tag });
-
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await createClient().from("event_social_follows").insert({
-      event_id: event.id, platform: form.platform, channel: form.channel,
-      follows_gained: Number(form.follows_gained), follow_date: form.follow_date, source_campaign: form.source_campaign,
-    });
-    if (error) { toast(error.message, "error"); return; }
-    toast("Social follows recorded");
-    setOpen(false);
-    router.refresh();
-  };
-
-  return (
-    <div className="space-y-5">
-      <div className="grid gap-4" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 170px), 1fr))" }}>
-        <MiniStat icon={Eye} label="Story / Post Views" value={formatNumber(event.views)} />
-        <MiniStat icon={Eye} label="Unique Views" value={formatNumber(event.unique_views)} />
-        <MiniStat icon={Share2} label="Shares" value={formatNumber(event.shares)} />
-        <MiniStat icon={MessageSquare} label="Comments" value={formatNumber(event.comments_count)} />
-        <MiniStat icon={ThumbsUp} label="Likes" value={formatNumber(event.likes)} />
-        <MiniStat icon={Megaphone} label="New Follows" value={formatNumber(follows.reduce((s, f) => s + f.follows_gained, 0))} />
-      </div>
-
-      <div>
-        <p className="label">Platforms Reached</p>
-        <div className="flex flex-wrap gap-1.5">
-          {platforms.length === 0 ? <span className="text-[13px] text-slate-400">No platforms recorded.</span> :
-            platforms.map((p) => <Tag key={p.id} color={p.color}>{p.name}</Tag>)}
-        </div>
-      </div>
-
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-[14px]">New Social Follows</h3>
-          {canWrite && <button className="btn btn-primary btn-sm" onClick={() => setOpen(true)}><Plus size={14} /> Record Follows</button>}
-        </div>
-        {follows.length === 0 ? (
-          <p className="text-[13px] text-slate-400">No social follows recorded for this event.</p>
-        ) : (
-          <div className="table-wrap">
-            <table className="data">
-              <thead><tr><th>Platform</th><th>Channel</th><th className="text-right">Follows Gained</th><th>Date</th><th>Campaign</th></tr></thead>
-              <tbody>
-                {follows.map((f) => (
-                  <tr key={f.id}>
-                    <td><Tag>{f.platform}</Tag></td>
-                    <td>{f.channel || "—"}</td>
-                    <td className="text-right tabular-nums font-semibold">{f.follows_gained}</td>
-                    <td>{formatDate(f.follow_date)}</td>
-                    <td className="text-slate-500">{f.source_campaign || "—"}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      <Modal open={open} onClose={() => setOpen(false)} title="Record Social Follows">
-        <form onSubmit={save} className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Platform</label>
-              <select className="select" value={form.platform} onChange={(e) => setForm({ ...form, platform: e.target.value })}>
-                {["Facebook", "Instagram", "YouTube", "SAT-7 Plus", "Website", "TikTok", "Other"].map((p) => <option key={p}>{p}</option>)}
-              </select>
-            </div>
-            <div><label className="label">Channel</label><input className="input" value={form.channel} onChange={(e) => setForm({ ...form, channel: e.target.value })} placeholder="SAT-7 KIDS" /></div>
-            <div><label className="label">Follows Gained</label><input className="input" type="number" min={0} required value={form.follows_gained} onChange={(e) => setForm({ ...form, follows_gained: e.target.value })} /></div>
-            <div><label className="label">Date</label><input className="input" type="date" value={form.follow_date} onChange={(e) => setForm({ ...form, follow_date: e.target.value })} /></div>
-          </div>
-          <div><label className="label">Source / Campaign</label><input className="input" value={form.source_campaign} onChange={(e) => setForm({ ...form, source_campaign: e.target.value })} /></div>
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>Cancel</button>
-            <button className="btn btn-primary">Save</button>
-          </div>
-        </form>
-      </Modal>
-    </div>
-  );
-}
-
 // ================= Contacts =================
 function ContactsTab({ eventId, contacts, profiles, canWrite }: { eventId: string; contacts: EventContact[]; profiles: Profile[]; canWrite: boolean }) {
   const router = useRouter();
@@ -1031,260 +909,6 @@ function MaterialsTab({ eventId, materials, canWrite }: { eventId: string; mater
           </div>
         </form>
       </Modal>
-    </div>
-  );
-}
-
-// ================= Linked testimonies/conversations =================
-function LinkedListTab({ items, icon: Icon, emptyLabel }: {
-  items: { id: string; title: string; subtitle: string; body: string; date: string | null }[];
-  icon: LucideIcon;
-  emptyLabel: string;
-}) {
-  if (items.length === 0) {
-    return <EmptyState icon={Icon} title={`No ${emptyLabel} linked`} description={`${emptyLabel[0].toUpperCase() + emptyLabel.slice(1)} recorded on the Insights Portal for this event will appear here.`} />;
-  }
-  return (
-    <div className="space-y-3">
-      {items.map((t) => (
-        <div key={t.id} className="rounded-xl border p-4">
-          <div className="flex items-center justify-between gap-2">
-            <p className="font-semibold text-[13.5px]">{t.title}</p>
-            <span className="text-[11.5px] text-slate-400">{formatDate(t.date)}</span>
-          </div>
-          <p className="text-[11.5px] text-slate-500">{t.subtitle}</p>
-          <p className="text-[13px] text-slate-700 mt-2">{t.body}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ================= Survey =================
-function SurveyTab({ eventId, surveys, canWrite }: { eventId: string; surveys: EventSurvey[]; canWrite: boolean }) {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({
-    respondent_name: "", respondent_role: "Participant",
-    overall_experience: 5, organization_rating: 5, communication_rating: 5, event_value_rating: 5,
-    would_participate_again: "Yes", what_worked: "", what_to_improve: "", additional_comments: "",
-  });
-
-  const avg = (key: keyof EventSurvey) =>
-    surveys.length ? (surveys.reduce((s, x) => s + (x[key] as number), 0) / surveys.length).toFixed(1) : "—";
-
-  const save = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const { error } = await createClient().from("event_surveys").insert({ event_id: eventId, ...form });
-    if (error) { toast(error.message, "error"); return; }
-    toast("Survey submitted");
-    setOpen(false);
-    router.refresh();
-  };
-
-  const StarPicker = ({ label, value, onChange }: { label: string; value: number; onChange: (v: number) => void }) => (
-    <div>
-      <p className="label">{label}</p>
-      <div className="flex gap-1.5">
-        {[1, 2, 3, 4, 5].map((n) => (
-          <button key={n} type="button" onClick={() => onChange(n)} aria-label={`${n} stars`} className="transition-transform hover:scale-110">
-            <Star size={22} className={n <= value ? "text-amber-400" : "text-slate-300"} fill={n <= value ? "currentColor" : "none"} />
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-[14px]">Survey Results ({surveys.length} response{surveys.length === 1 ? "" : "s"})</h3>
-        {canWrite && <button className="btn btn-primary btn-sm" onClick={() => setOpen(true)}><Plus size={14} /> Submit Survey</button>}
-      </div>
-
-      {surveys.length === 0 ? (
-        <EmptyState icon={MessageSquareQuote} title="No survey responses" description="Collect participant feedback after the event." />
-      ) : (
-        <div className="space-y-5">
-          <div className="grid gap-3" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 160px), 1fr))" }}>
-            {[
-              ["Overall Experience", avg("overall_experience")],
-              ["Organization", avg("organization_rating")],
-              ["Communication", avg("communication_rating")],
-              ["Event Value", avg("event_value_rating")],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-xl border p-4 text-center">
-                <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{label}</p>
-                <p className="text-[26px] font-bold mt-1" style={{ color: "#f59e0b" }}>{value}<span className="text-[14px] text-slate-400">/5</span></p>
-              </div>
-            ))}
-            <div className="rounded-xl border p-4 text-center">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Would Join Again</p>
-              <p className="text-[15px] font-bold mt-2">
-                {(() => {
-                  const yes = surveys.filter((s) => s.would_participate_again === "Yes").length;
-                  return `${Math.round((yes / surveys.length) * 100)}% Yes`;
-                })()}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            {surveys.map((s) => (
-              <div key={s.id} className="rounded-xl border p-4">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-[13px]">{s.respondent_name || "Anonymous"} <span className="font-normal text-slate-400">· {s.respondent_role}</span></p>
-                  <StatusBadge status={s.would_participate_again} />
-                </div>
-                <p className="text-[12px] text-slate-500 mt-0.5">
-                  Overall {s.overall_experience}/5 · Org {s.organization_rating}/5 · Comm {s.communication_rating}/5 · Value {s.event_value_rating}/5
-                </p>
-                {s.what_worked && <p className="text-[12.5px] mt-2"><span className="font-semibold text-emerald-700">Worked well:</span> {s.what_worked}</p>}
-                {s.what_to_improve && <p className="text-[12.5px] mt-1"><span className="font-semibold text-amber-700">Improve:</span> {s.what_to_improve}</p>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      <Modal open={open} onClose={() => setOpen(false)} title="Submit Survey Response" wide>
-        <form onSubmit={save} className="space-y-4" noValidate>
-          <div className="grid grid-cols-2 gap-3">
-            <div><label className="label">Respondent Name</label><input className="input" value={form.respondent_name} onChange={(e) => setForm({ ...form, respondent_name: e.target.value })} /></div>
-            <div><label className="label">Role</label>
-              <select className="select" value={form.respondent_role} onChange={(e) => setForm({ ...form, respondent_role: e.target.value })}>
-                {["Participant", "Partner", "Volunteer", "Staff"].map((r) => <option key={r}>{r}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            <StarPicker label="Overall Experience" value={form.overall_experience} onChange={(v) => setForm({ ...form, overall_experience: v })} />
-            <StarPicker label="Organization" value={form.organization_rating} onChange={(v) => setForm({ ...form, organization_rating: v })} />
-            <StarPicker label="Communication" value={form.communication_rating} onChange={(v) => setForm({ ...form, communication_rating: v })} />
-            <StarPicker label="Event Value" value={form.event_value_rating} onChange={(v) => setForm({ ...form, event_value_rating: v })} />
-          </div>
-          <div>
-            <p className="label">Would you participate again?</p>
-            <div className="flex gap-2">
-              {["Yes", "No", "Maybe"].map((v) => (
-                <button key={v} type="button" onClick={() => setForm({ ...form, would_participate_again: v })}
-                  className="badge" style={{ padding: "7px 16px", background: form.would_participate_again === v ? "var(--brand)" : "var(--surface-2)", color: form.would_participate_again === v ? "#fff" : "var(--muted)", fontSize: "13px" }}>
-                  {v}
-                </button>
-              ))}
-            </div>
-          </div>
-          <div><label className="label">What worked well?</label><textarea className="textarea" rows={2} value={form.what_worked} onChange={(e) => setForm({ ...form, what_worked: e.target.value })} /></div>
-          <div><label className="label">What could be improved?</label><textarea className="textarea" rows={2} value={form.what_to_improve} onChange={(e) => setForm({ ...form, what_to_improve: e.target.value })} /></div>
-          <div><label className="label">Additional comments</label><textarea className="textarea" rows={2} value={form.additional_comments} onChange={(e) => setForm({ ...form, additional_comments: e.target.value })} /></div>
-          <div className="flex justify-end gap-2 pt-2 border-t">
-            <button type="button" className="btn btn-secondary" onClick={() => setOpen(false)}>Cancel</button>
-            <button className="btn btn-primary">Submit Survey</button>
-          </div>
-        </form>
-      </Modal>
-    </div>
-  );
-}
-
-// ================= Comments =================
-function CommentsTab({ eventId, comments, currentUserId, isAdmin, profiles }: {
-  eventId: string; comments: EventComment[]; currentUserId: string; isAdmin: boolean; profiles: Profile[];
-}) {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [body, setBody] = useState("");
-  const [replyTo, setReplyTo] = useState<string | null>(null);
-  const [sending, setSending] = useState(false);
-
-  const roots = comments.filter((c) => !c.parent_id);
-  const repliesOf = (id: string) => comments.filter((c) => c.parent_id === id);
-
-  const submit = async (parentId: string | null) => {
-    if (!body.trim()) return;
-    setSending(true);
-    // parse @mentions of profiles by name
-    const mentions: string[] = [];
-    for (const p of profiles) {
-      if (body.includes(`@${p.full_name}`)) mentions.push(p.id);
-    }
-    const { error } = await createClient().from("event_comments").insert({
-      event_id: eventId, parent_id: parentId, user_id: currentUserId, body: body.trim(), mentions,
-    });
-    setSending(false);
-    if (error) { toast(error.message, "error"); return; }
-    toast(parentId ? "Reply added" : "Comment added");
-    setBody("");
-    setReplyTo(null);
-    router.refresh();
-  };
-
-  const remove = async (id: string) => {
-    const { error } = await createClient().from("event_comments").update({ is_deleted: true }).eq("id", id);
-    if (error) { toast(error.message, "error"); return; }
-    toast("Comment deleted");
-    router.refresh();
-  };
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-xl border p-3">
-        <textarea
-          className="textarea" rows={2} placeholder="Write a comment… use @Name to mention someone"
-          value={body} onChange={(e) => setBody(e.target.value)}
-        />
-        <div className="flex justify-end mt-2">
-          <button className="btn btn-primary btn-sm" disabled={!body.trim() || sending} onClick={() => submit(replyTo)}>
-            {replyTo ? "Reply" : "Comment"}
-          </button>
-        </div>
-      </div>
-
-      {roots.length === 0 && <p className="text-[13px] text-slate-400">No comments yet — start the discussion.</p>}
-
-      <div className="space-y-4">
-        {roots.map((c) => (
-          <div key={c.id}>
-            <CommentBubble c={c} onReply={() => { setReplyTo(c.id); }} onReplyCancel={() => setReplyTo(null)} replying={replyTo === c.id} canDelete={c.user_id === currentUserId || isAdmin} onDelete={() => remove(c.id)} />
-            <div className="ml-8 mt-2 space-y-2 border-l-2 pl-4" style={{ borderColor: "var(--border)" }}>
-              {repliesOf(c.id).map((r) => (
-                <CommentBubble key={r.id} c={r} small onReply={undefined} onReplyCancel={undefined} replying={false} canDelete={r.user_id === currentUserId || isAdmin} onDelete={() => remove(r.id)} />
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CommentBubble({ c, small, onReply, onReplyCancel, replying, canDelete, onDelete }: {
-  c: EventComment; small?: boolean; onReply?: () => void; onReplyCancel?: () => void;
-  replying: boolean; canDelete: boolean; onDelete: () => void;
-}) {
-  return (
-    <div className={small ? "rounded-xl border p-3" : "rounded-xl border p-4"}>
-      <div className="flex items-start gap-3">
-        <Avatar name={c.profiles?.full_name ?? "?"} size={small ? 26 : 32} />
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <p className="font-semibold text-[13px]">{c.profiles?.full_name ?? "Unknown"}</p>
-            <span className="text-[11px] text-slate-400">{formatDateTime(c.created_at)}</span>
-          </div>
-          <p className="text-[13.5px] text-slate-700 mt-1 whitespace-pre-wrap">{c.body}</p>
-          <div className="flex items-center gap-2 mt-2">
-            {onReply && (
-              <button className="text-[12px] font-medium text-blue-700 hover:underline" onClick={replying ? onReplyCancel : onReply}>
-                {replying ? "Cancel reply" : "Reply"}
-              </button>
-            )}
-            {canDelete && (
-              <button className="text-[12px] font-medium text-red-600 hover:underline" onClick={onDelete}>Delete</button>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

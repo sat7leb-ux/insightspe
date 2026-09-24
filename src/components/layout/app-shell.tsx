@@ -9,27 +9,23 @@ import { cn } from "@/lib/utils";
 import { Avatar } from "@/components/ui/primitives";
 import { CommandPalette } from "./command-palette";
 import {
-  LayoutDashboard, CalendarDays, CalendarRange, ClipboardList, Images, MessageSquareHeart,
-  Users, BarChart3, Target, Package, MessageSquareQuote, MessagesSquare, FileBarChart,
-  Settings, LogOut, Search, Menu, X, ChevronDown, Radio, Building2, Share2,
+  LayoutDashboard, CalendarDays, CalendarRange, ClipboardList, Images,
+  Users, BarChart3, Target, Package, FileBarChart,
+  Settings, LogOut, Search, Menu, X, ChevronDown, Radio, Building2,
 } from "lucide-react";
 
 const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/public-engagement", label: "Public Engagement", icon: Radio },
   { href: "/events", label: "Events", icon: CalendarDays },
-  { href: "/social-media", label: "Social Media", icon: Share2 },
   { href: "/calendar", label: "Calendar", icon: CalendarRange },
   { href: "/daily-reports", label: "Daily Reports", icon: ClipboardList },
   { href: "/gallery", label: "Gallery", icon: Images },
-  { href: "/surveys", label: "Surveys", icon: MessageSquareHeart },
   { href: "/users", label: "Users", icon: Users, adminOnly: true },
   { href: "/partners", label: "Partners / Hosts", icon: Building2 },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/goals", label: "Goals / Pipeline", icon: Target },
   { href: "/materials", label: "Materials", icon: Package },
-  { href: "/testimonies", label: "Testimonies", icon: MessageSquareQuote },
-  { href: "/conversations", label: "Conversations", icon: MessagesSquare },
   { href: "/reports", label: "Reports", icon: FileBarChart },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

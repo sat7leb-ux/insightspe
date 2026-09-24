@@ -1,19 +1,18 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import type { EventRow, DailyReport, EventMaterial, EventPartnership, EventSurvey } from "@/lib/types";
+import type { EventRow, DailyReport, EventMaterial, EventPartnership } from "@/lib/types";
 import { PageHeader, StatCard } from "@/components/ui/primitives";
 import { formatNumber, formatMoney, downloadCsv } from "@/lib/utils";
 import { FileBarChart, Download, FileText } from "lucide-react";
 
 export function ReportsClient({
-  events, dailyReports, materials, partnerships, surveys, canViewFinancials,
+  events, dailyReports, materials, partnerships, canViewFinancials,
 }: {
   events: EventRow[];
   dailyReports: (DailyReport & { events?: { id: string; name: string } | null })[];
   materials: (EventMaterial & { events?: { id: string; name: string; country: string } | null })[];
   partnerships: (EventPartnership & { events?: { id: string; name: string } | null })[];
-  surveys: (EventSurvey & { events?: { id: string; name: string } | null })[];
   canViewFinancials: boolean;
 }) {
   const [range, setRange] = useState({ from: "", to: "" });
@@ -45,18 +44,11 @@ export function ReportsClient({
     City: p.city, Contact: p.contact_person, FollowUp: p.follow_up_date ?? "", Event: p.events?.name ?? "",
   })));
 
-  const exportSurveys = () => downloadCsv("report-surveys.csv", surveys.map((s) => ({
-    Event: s.events?.name ?? "", Respondent: s.respondent_name, Role: s.respondent_role,
-    Overall: s.overall_experience, Organization: s.organization_rating, Communication: s.communication_rating,
-    Value: s.event_value_rating, Again: s.would_participate_again,
-  })));
-
   const cards = [
     { title: "Events Report", desc: "Full event list with attendance and digital metrics", count: filteredEvents.length, onExport: exportEvents },
     { title: "Attendance Report", desc: "Day-by-day attendance from daily reports", count: dailyReports.length, onExport: exportAttendance },
     { title: "Materials Report", desc: "All materials distributed by event and country", count: materials.length, onExport: exportMaterials },
     { title: "Partnerships Report", desc: "Partnership pipeline across all events", count: partnerships.length, onExport: exportPartnerships },
-    { title: "Survey Results", desc: "Aggregated post-event feedback", count: surveys.length, onExport: exportSurveys },
   ];
 
   const totalAttendees = filteredEvents.filter((e) => e.status !== "Cancelled").reduce((s, e) => s + e.adults + e.children, 0);
