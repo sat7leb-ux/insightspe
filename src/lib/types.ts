@@ -185,9 +185,19 @@ export interface DailyReport {
   profiles?: Pick<Profile, 'id' | 'full_name'> | null;
 }
 
+export interface GallerySection {
+  id: string;
+  event_id: string;
+  name: string;
+  description: string;
+  sort_order: number;
+  created_at: string;
+}
+
 export interface GalleryImage {
   id: string;
   event_id: string;
+  section_id: string | null;
   storage_path: string;
   public_url: string;
   caption: string;

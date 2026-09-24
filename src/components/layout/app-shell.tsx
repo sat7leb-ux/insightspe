@@ -11,7 +11,7 @@ import { CommandPalette } from "./command-palette";
 import {
   LayoutDashboard, CalendarDays, CalendarRange, ClipboardList, Images, MessageSquareHeart,
   Users, BarChart3, Target, Package, MessageSquareQuote, MessagesSquare, FileBarChart,
-  Settings, LogOut, Search, Menu, X, ChevronDown, Radio,
+  Settings, LogOut, Search, Menu, X, ChevronDown, Radio, Building2,
 } from "lucide-react";
 
 const NAV = [
@@ -23,6 +23,7 @@ const NAV = [
   { href: "/gallery", label: "Gallery", icon: Images },
   { href: "/surveys", label: "Surveys", icon: MessageSquareHeart },
   { href: "/users", label: "Users", icon: Users, adminOnly: true },
+  { href: "/partners", label: "Partners / Hosts", icon: Building2 },
   { href: "/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/goals", label: "Goals / Pipeline", icon: Target },
   { href: "/materials", label: "Materials", icon: Package },

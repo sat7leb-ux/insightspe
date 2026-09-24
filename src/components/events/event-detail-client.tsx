@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type {
   EventRow, Partner, Channel, Profile, EventParticipant, EventGoal, DailyReport,
-  GalleryImage, EventContact, EventPartnership, EventMaterial, SocialFollow,
+  GalleryImage, GallerySection, EventContact, EventPartnership, EventMaterial, SocialFollow,
   EventComment, EventSurvey, Testimony, Conversation, ActivityLogEntry, EventTypeRow,
 } from "@/lib/types";
 import { GOAL_STATUSES, PARTNERSHIP_STATUSES, FOLLOW_UP_STATUSES, PARTICIPATION_STATUSES, canWriteEvents, canViewFinancials, type UserRole } from "@/lib/types";
@@ -44,7 +44,7 @@ type TabId = (typeof TABS)[number]["id"];
 
 export function EventDetailClient({
   event, partner, partners, channels, platforms, profiles, eventTypes, participants, goals, dailyReports,
-  gallery, contacts, partnerships, materials, follows, comments, surveys, testimonies,
+  gallery, gallerySections, contacts, partnerships, materials, follows, comments, surveys, testimonies,
   conversations, activity, role, currentUserId, canFinancial,
 }: {
   event: EventRow;
@@ -58,6 +58,7 @@ export function EventDetailClient({
   goals: EventGoal[];
   dailyReports: DailyReport[];
   gallery: GalleryImage[];
+  gallerySections: GallerySection[];
   contacts: EventContact[];
   partnerships: EventPartnership[];
   materials: EventMaterial[];
@@ -196,7 +197,7 @@ export function EventDetailClient({
           {tab === "testimonies" && <LinkedListTab items={testimonies.map((t) => ({ id: t.id, title: t.author_name || "Anonymous", subtitle: t.country, body: t.summary, date: t.content_date }))} icon={MessageSquareQuote} emptyLabel="testimonies" />}
           {tab === "conversations" && <LinkedListTab items={conversations.map((c) => ({ id: c.id, title: c.person_name || "Anonymous", subtitle: `${c.platform} · ${c.country}`, body: c.summary, date: c.content_date }))} icon={MessagesSquare} emptyLabel="conversations" />}
           {tab === "materials" && <MaterialsTab eventId={event.id} materials={materials} canWrite={canWrite} />}
-          {tab === "gallery" && <GalleryTab eventId={event.id} images={gallery} canWrite={canWrite} readOnly={!canWrite} />}
+          {tab === "gallery" && <GalleryTab eventId={event.id} sections={gallerySections} images={gallery} canWrite={canWrite} readOnly={!canWrite} />}
           {tab === "survey" && <SurveyTab eventId={event.id} surveys={surveys} canWrite={canWrite} />}
           {tab === "comments" && <CommentsTab eventId={event.id} comments={comments} currentUserId={currentUserId} isAdmin={role === "super_admin" || role === "admin"} profiles={profiles} />}
           {tab === "activity" && <ActivityTab activity={activity} />}

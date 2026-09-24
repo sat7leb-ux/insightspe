@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import type {
   EventRow, Partner, Channel, Country, EventTypeRow, Platform, MaterialType,
-  Profile, EventParticipant, EventGoal, DailyReport, GalleryImage, EventContact,
+  Profile, EventParticipant, EventGoal, DailyReport, GalleryImage, GallerySection, EventContact,
   EventPartnership, EventMaterial, SocialFollow, EventComment, EventSurvey,
   Testimony, Conversation, ActivityLogEntry, SurveyQuestion,
 } from "@/lib/types";
@@ -180,6 +180,18 @@ export async function getGalleryImages(eventId: string): Promise<GalleryImage[]>
       .order("is_featured", { ascending: false })
       .order("created_at", { ascending: false });
     return (data ?? []) as GalleryImage[];
+  }, []);
+}
+
+export async function getGallerySections(eventId: string): Promise<GallerySection[]> {
+  return safe(async () => {
+    const { data } = await (await sb())
+      .from("event_gallery_sections")
+      .select("*")
+      .eq("event_id", eventId)
+      .order("sort_order")
+      .order("created_at");
+    return (data ?? []) as GallerySection[];
   }, []);
 }
 

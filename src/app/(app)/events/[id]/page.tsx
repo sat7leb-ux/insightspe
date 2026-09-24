@@ -3,7 +3,7 @@ import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import {
   getEvent, getPartners, getChannels, getProfiles, getEventTypes, getEventParticipants, getEventGoals,
-  getDailyReports, getGalleryImages, getEventContacts, getEventPartnerships,
+  getDailyReports, getGalleryImages, getGallerySections, getEventContacts, getEventPartnerships,
   getEventMaterials, getSocialFollows, getEventComments, getEventSurveys,
   getTestimonies, getConversations, getActivityLog, getPlatforms, safe,
 } from "@/lib/queries";
@@ -20,7 +20,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   const sb = await createClient();
 
-  const [partners, channels, platforms, profiles, eventTypes, participants, goals, dailyReports, gallery, contacts, partnerships, materials, follows, comments, surveys, testimonies, conversations, activity] = await Promise.all([
+  const [partners, channels, platforms, profiles, eventTypes, participants, goals, dailyReports, gallery, gallerySections, contacts, partnerships, materials, follows, comments, surveys, testimonies, conversations, activity] = await Promise.all([
     getPartners(),
     getChannels(),
     getPlatforms(),
@@ -30,6 +30,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
     getEventGoals(id),
     getDailyReports(id),
     getGalleryImages(id),
+    getGallerySections(id),
     getEventContacts(id),
     getEventPartnerships(id),
     getEventMaterials(id),
@@ -56,6 +57,7 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       goals={goals}
       dailyReports={dailyReports}
       gallery={gallery}
+      gallerySections={gallerySections}
       contacts={contacts}
       partnerships={partnerships}
       materials={materials}
