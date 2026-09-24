@@ -273,16 +273,10 @@ export function EventForm({
             {EVENT_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
-        <div>
+        <div className="sm:col-span-2">
           <label className="label" htmlFor="ev-status">Status</label>
           <select id="ev-status" className="select" value={form.status} onChange={(e) => set("status", e.target.value)}>
             {EVENT_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="label" htmlFor="ev-stage">Pipeline Stage</label>
-          <select id="ev-stage" className="select" value={form.stage} onChange={(e) => set("stage", e.target.value)}>
-            {EVENT_STAGES.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
         </div>
       </Section>
