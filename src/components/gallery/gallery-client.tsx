@@ -92,14 +92,14 @@ export function GalleryClient({
     return [...counts.entries()].sort((a, b) => b[1] - a[1]);
   }, [images]);
 
-  // events with no gallery content yet (for quick upload)
+  // events with no images yet (for quick upload)
   const emptyEvents = useMemo(() => {
-    const withContent = new Set([...sections.map((s) => s.event_id), ...images.map((i) => i.event_id)]);
+    const withImages = new Set(images.map((i) => i.event_id));
     return events.filter((e) =>
-      !withContent.has(e.id) && e.status !== "Archived" && e.status !== "Cancelled" &&
+      !withImages.has(e.id) && e.status !== "Archived" && e.status !== "Cancelled" &&
       (!typeFilter || e.event_type === typeFilter),
     ).sort((a, b) => b.start_date.localeCompare(a.start_date));
-  }, [events, sections, images, typeFilter]);
+  }, [events, images, typeFilter]);
 
   // flat list for lightbox navigation
   const flat = useMemo(() => {
