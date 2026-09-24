@@ -76,8 +76,8 @@ export interface Country {
   id: string;
   name: string;
   code: string;
-  region: string;
-  is_active: boolean;
+  region?: string;
+  is_active?: boolean;
 }
 
 export interface EventTypeRow { id: string; name: string; slug: string; color: string; sort_order: number; is_active: boolean; }
@@ -114,6 +114,7 @@ export interface EventRow {
   children: number;
   staff_count: number;
   volunteer_count: number;
+  volunteer_names?: string;
   manager_id: string | null;
   campaign_tag: string;
   views: number;

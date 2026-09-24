@@ -5,7 +5,7 @@ import {
   getEvent, getPartners, getChannels, getProfiles, getEventTypes, getEventParticipants, getEventGoals,
   getDailyReports, getGalleryImages, getGallerySections, getEventContacts, getEventPartnerships,
   getEventMaterials, getSocialFollows, getEventComments, getEventSurveys,
-  getTestimonies, getConversations, getActivityLog, getPlatforms, safe,
+  getTestimonies, getConversations, getActivityLog, getPlatforms, getCountries, getCountryAreas, safe,
 } from "@/lib/queries";
 import { EventDetailClient } from "@/components/events/event-detail-client";
 import { canViewFinancials } from "@/lib/types";
@@ -21,13 +21,19 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
 
   const sb = await createClient();
 
-  const [partners, channels, platforms, profiles, eventTypes, participants, goals, dailyReports, gallery, gallerySections, contacts, partnerships, materials, follows, comments, surveys, testimonies, conversations, activity, allSocialAccounts, socialPostsRaw] = await Promise.all([
+  const [partners, channels, platforms, profiles, eventTypes, countriesList, areas, participants, staffRows, goals, dailyReports, gallery, gallerySections, contacts, partnerships, materials, follows, comments, surveys, testimonies, conversations, activity, allSocialAccounts, socialPostsRaw] = await Promise.all([
     getPartners(),
     getChannels(),
     getPlatforms(),
     getProfiles(),
     getEventTypes(),
+    getCountries(),
+    getCountryAreas(),
     getEventParticipants(id),
+    safe(async () => {
+      const { data } = await sb.from("event_participants").select("user_id").eq("event_id", id).eq("responsibility", "Staff");
+      return data ?? [];
+    }, []),
     getEventGoals(id),
     getDailyReports(id),
     getGalleryImages(id),
@@ -80,6 +86,9 @@ export default async function EventDetailPage({ params }: { params: Promise<{ id
       platforms={platforms}
       profiles={profiles}
       eventTypes={eventTypes}
+      countriesList={countriesList}
+      areas={areas}
+      staffIds={staffRows.map((r: { user_id: string }) => r.user_id)}
       participants={participants}
       goals={goals}
       dailyReports={dailyReports}

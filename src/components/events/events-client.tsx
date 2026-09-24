@@ -4,7 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import type { EventRow, Partner, Channel, Profile, EventTypeRow } from "@/lib/types";
+import type { Country, EventRow, Partner, Channel, Profile, EventTypeRow } from "@/lib/types";
 import { EVENT_STATUSES, EVENT_TYPES, canWriteEvents, type UserRole } from "@/lib/types";
 import { StatusBadge, Tag, EmptyState, PageHeader, TableSkeleton } from "@/components/ui/primitives";
 import { useToast } from "@/components/ui/toast";
@@ -17,13 +17,15 @@ import {
 } from "lucide-react";
 
 export function EventsClient({
-  events, partners, channels, profiles, eventTypes, role,
+  events, partners, channels, profiles, eventTypes, areas, countriesList, role,
 }: {
   events: EventRow[];
   partners: Partner[];
   channels: Channel[];
   profiles: Profile[];
   eventTypes: EventTypeRow[];
+  areas: { country: string; area: string }[];
+  countriesList?: Country[];
   role: UserRole;
 }) {
   const router = useRouter();
@@ -276,6 +278,8 @@ export function EventsClient({
           channels={channels}
           profiles={profiles}
           eventTypes={eventTypes}
+          areas={areas}
+          countriesList={countriesList}
           onDone={() => { setFormOpen(false); router.refresh(); }}
           onCancel={() => setFormOpen(false)}
         />

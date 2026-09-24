@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import type {
-  EventRow, Partner, Channel, Profile, EventParticipant, EventGoal, DailyReport,
+  EventRow, Partner, Channel, Country, Profile, EventParticipant, EventGoal, DailyReport,
   GalleryImage, GallerySection, EventContact, EventPartnership, EventMaterial, SocialFollow,
   EventComment, EventSurvey, Testimony, Conversation, ActivityLogEntry, EventTypeRow,
 } from "@/lib/types";
@@ -46,7 +46,7 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 export function EventDetailClient({
-  event, partner, partners, channels, platforms, profiles, eventTypes, participants, goals, dailyReports,
+  event, partner, partners, channels, platforms, profiles, eventTypes, countriesList, areas, staffIds, participants, goals, dailyReports,
   gallery, gallerySections, contacts, partnerships, materials, follows, comments, surveys, testimonies,
   conversations, activity, role, currentUserId, canFinancial,
   socialAccounts, allSocialAccounts, socialPosts,
@@ -58,6 +58,9 @@ export function EventDetailClient({
   platforms: { id: string; name: string; color: string }[];
   profiles: Profile[];
   eventTypes: EventTypeRow[];
+  countriesList?: Country[];
+  areas: { country: string; area: string }[];
+  staffIds: string[];
   participants: EventParticipant[];
   goals: EventGoal[];
   dailyReports: DailyReport[];
@@ -228,6 +231,9 @@ export function EventDetailClient({
           channels={channels}
           profiles={profiles}
           eventTypes={eventTypes}
+          areas={areas}
+          countriesList={countriesList}
+          initialStaffIds={staffIds}
           onDone={() => { setEditOpen(false); router.refresh(); }}
           onCancel={() => setEditOpen(false)}
         />
@@ -241,6 +247,7 @@ function OverviewTab({ event, canFinancial, participants, profiles, follows, mat
   event: EventRow; canFinancial: boolean; participants: EventParticipant[];
   profiles: Profile[]; follows: SocialFollow[]; materials: EventMaterial[]; contacts: EventContact[]; partnerships: EventPartnership[];
 }) {
+  const volunteers = (event.volunteer_names ?? "").split("\n").map((n: string) => n.trim()).filter(Boolean);
   const totalMaterials = materials.reduce((s, m) => s + Number(m.quantity), 0);
   return (
     <div className="space-y-5">
@@ -274,9 +281,9 @@ function OverviewTab({ event, canFinancial, participants, profiles, follows, mat
       )}
 
       <div>
-        <h3 className="font-semibold text-[14px] mb-3">Team ({participants.length})</h3>
-        {participants.length === 0 ? (
-          <p className="text-[13px] text-slate-400">No participants assigned yet.</p>
+        <h3 className="font-semibold text-[14px] mb-3">Team ({participants.length + volunteers.length})</h3>
+        {participants.length === 0 && volunteers.length === 0 ? (
+          <p className="text-[13px] text-slate-400">No team members assigned yet.</p>
         ) : (
           <div className="grid gap-2" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 260px), 1fr))" }}>
             {participants.map((p) => (
@@ -287,6 +294,15 @@ function OverviewTab({ event, canFinancial, participants, profiles, follows, mat
                   <p className="text-[11.5px] text-slate-500 truncate">{p.responsibility || p.profiles?.role?.replace("_", " ")}</p>
                 </div>
                 <StatusBadge status={p.participation_status} />
+              </div>
+            ))}
+            {volunteers.map((name, i) => (
+              <div key={`vol-${i}`} className="flex items-center gap-3 rounded-xl border p-3" style={{ background: "var(--surface-2)" }}>
+                <Avatar name={name} size={34} />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[13px] font-semibold truncate">{name}</p>
+                  <p className="text-[11.5px] text-slate-500">Volunteer</p>
+                </div>
               </div>
             ))}
           </div>

@@ -32,6 +32,20 @@ export async function getCountries(): Promise<Country[]> {
     return (data ?? []) as Country[];
   }, []);
 }
+
+export async function getCountryAreas(): Promise<{ country: string; area: string }[]> {
+  return safe(async () => {
+    const { data } = await (await sb())
+      .from("country_areas")
+      .select("country, area")
+      .eq("is_active", true)
+      .order("country")
+      .order("sort_order")
+      .limit(500);
+    return (data ?? []) as { country: string; area: string }[];
+  }, []);
+}
+
 export async function getEventTypes(): Promise<EventTypeRow[]> {
   return safe(async () => {
     const { data } = await (await sb()).from("event_types").select("*").eq("is_active", true).order("sort_order");
