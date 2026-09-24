@@ -7,6 +7,7 @@ import type { EventRow, Partner, Channel, Profile, EventTypeRow, Country } from 
 import { EVENT_STATUSES, EVENT_STAGES, EVENT_TYPES } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
 import { Loader2 } from "lucide-react";
+import { COUNTRY_LIST, areasForCountry } from "@/lib/country-areas";
 
 // Module-scope so React keeps the same component identity across re-renders.
 // (Defining this inside EventForm remounts all inputs on every keystroke,
@@ -108,9 +109,9 @@ export function EventForm({
 
   const countries = [...new Set(partners.map((p) => p.country).filter(Boolean))].sort();
 
-  // country dropdown: areas table first, then countries table, then partner countries
+  // country dropdown: static list first, then DB areas, then countries table, then partner countries
   const countryOptions = useMemo(() => {
-    const set = new Set<string>();
+    const set = new Set<string>(COUNTRY_LIST);
     for (const a of areas) set.add(a.country);
     for (const c of countriesList ?? []) set.add(c.name);
     for (const c of countries) if (c) set.add(c);
@@ -119,7 +120,7 @@ export function EventForm({
   }, [areas, countries]);
 
   const areaOptions = useMemo(
-    () => areas.filter((a) => a.country === form.country).map((a) => a.area).sort(),
+    () => areasForCountry(form.country, areas),
     [areas, form.country],
   );
 

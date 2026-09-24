@@ -46,9 +46,11 @@ export async function getCountryAreas(): Promise<{ country: string; area: string
   }, []);
 }
 
-export async function getEventTypes(): Promise<EventTypeRow[]> {
+export async function getEventTypes(includeHidden = false): Promise<EventTypeRow[]> {
   return safe(async () => {
-    const { data } = await (await sb()).from("event_types").select("*").eq("is_active", true).order("sort_order");
+    let q = (await sb()).from("event_types").select("*");
+    if (!includeHidden) q = q.eq("is_active", true);
+    const { data } = await q.order("sort_order");
     return (data ?? []) as EventTypeRow[];
   }, []);
 }

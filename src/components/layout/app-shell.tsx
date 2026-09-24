@@ -10,7 +10,7 @@ import { Avatar } from "@/components/ui/primitives";
 import { CommandPalette } from "./command-palette";
 import {
   LayoutDashboard, CalendarDays, CalendarRange, ClipboardList, Images,
-  Users, BarChart3, Target, Package, FileBarChart,
+  Users, BarChart3, Target, Package, FileBarChart, Tags,
   Settings, LogOut, Search, Menu, X, ChevronDown, Radio, Building2,
 } from "lucide-react";
 
@@ -18,6 +18,7 @@ const NAV = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/public-engagement", label: "Public Engagement", icon: Radio },
   { href: "/events", label: "Events", icon: CalendarDays },
+  { href: "/event-types", label: "Event Types", icon: Tags },
   { href: "/calendar", label: "Calendar", icon: CalendarRange },
   { href: "/daily-reports", label: "Daily Reports", icon: ClipboardList },
   { href: "/gallery", label: "Gallery", icon: Images },
