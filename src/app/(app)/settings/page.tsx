@@ -17,6 +17,7 @@ export default async function SettingsPage() {
       const { data } = await sb
         .from("social_accounts")
         .select("*, channels(id, name, color)")
+        .eq("is_active", true)
         .order("platform")
         .order("display_name");
       return (data ?? []) as SocialAccount[];
